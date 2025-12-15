@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
-      <Component {...pageProps} user={user} Logout={logout} />
+      <Component {...pageProps} user={user} logout={logout} />
     </>
   );
 }
