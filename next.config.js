@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
+   productionBrowserSourceMaps: true,
   // Server runtime configuration
   serverRuntimeConfig: {
     // Increase the maximum header size to 32KB

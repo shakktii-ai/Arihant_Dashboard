@@ -1,331 +1,3 @@
-// // pages/admin/index.js
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/router";
-
-// export default function AdminIndex() {
-//   const router = useRouter();
-//   const [interviews, setInterviews] = useState([]);
-//   const [showCreate, setShowCreate] = useState(false);
-//   const [errors, setErrors] = useState({});
-//   const [form, setForm] = useState({
-//     jd: "",
-//     jobRole: "",
-//     qualification: "",
-//     criteria: "",
-//     questions: { totalQuestions: 60, aptitude: 20, technical: 25, softskill: 15 },
-//   });
-
-//   useEffect(() => {
-//     const token = localStorage.getItem("token");
-//     if (!token) return router.push("/admin/login");
-//     fetchList();
-//   }, []);
-
-//   async function fetchList() {
-//     const res = await fetch("/api/admin/interviews");
-//     const data = await res.json();
-//     if (data.ok) setInterviews(data.interviews);
-//   }
-// function validateForm() {
-//   let err = {};
-
-//   if (!form.jobRole.trim()) err.jobRole = "Job role is required";
-//   if (!form.jd.trim()) err.jd = "Job description is required";
-//   if (!form.qualification.trim())
-//     err.qualification = "Qualification is required";
-//   if (!form.criteria.trim()) err.criteria = "Criteria is required";
-
-//   const { aptitude, technical, softskill, totalQuestions } = form.questions;
-
-//   if (aptitude < 1) err.aptitude = "Must be at least 1";
-//   if (technical < 1) err.technical = "Must be at least 1";
-//   if (softskill < 1) err.softskill = "Must be at least 1";
-
-//   const sum = aptitude + technical + softskill;
-
-//   if (sum !== totalQuestions) {
-//     err.total = `Total must be ${totalQuestions}, but got ${sum}`;
-//   }
-
-//   return err;
-// }
-
-//  async function handleCreate(e) {
-//   e.preventDefault();
-
-//   const v = validateForm();
-//   setErrors(v);
-
-//   if (Object.keys(v).length > 0) {
-//     return; // Stop submit — errors exist
-//   }
-
-//   const res = await fetch("/api/admin/interviews", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify(form),
-//   });
-
-//   const data = await res.json();
-
-//   if (data.ok) {
-//     fetchList();
-//     setShowCreate(false);
-//     alert("Created — candidate link:\n" + data.link);
-//   } else {
-//     alert("Error");
-//   }
-// }
-
-
-//   async function toggleActive(id, current) {
-//     await fetch(`/api/admin/interviews/${id}`, {
-//       method: "PATCH",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ isActive: !current }),
-//     });
-//     fetchList();
-//   }
-
-//   return (
-//     <div className="p-6">
-//       <div className="flex justify-between items-center mb-6">
-//         <h1 className="text-2xl font-bold">Interviews</h1>
-//         <div>
-//           <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-blue-600 text-white rounded">Create Interview</button>
-//         </div>
-//       </div>
-
-//       {/* CREATE INTERVIEW MODAL */}
-//       {showCreate && (
-//   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-//     <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6 animate-scaleIn relative">
-
-//       <button
-//         onClick={() => setShowCreate(false)}
-//         className="absolute top-3 right-3 text-gray-500 hover:text-black text-xl"
-//       >
-//         ✕
-//       </button>
-
-//       <h2 className="text-xl font-semibold mb-4">Create New Interview</h2>
-
-//       <form onSubmit={handleCreate} className="space-y-4">
-
-//         {/* JOB ROLE */}
-//         <div>
-//           <input
-//             placeholder="Job Role"
-//             className={`w-full border p-2 rounded ${
-//               errors.jobRole ? "border-red-500" : ""
-//             }`}
-//             value={form.jobRole}
-//             onChange={(e) => setForm({ ...form, jobRole: e.target.value })}
-//           />
-//           {errors.jobRole && (
-//             <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//               <span>⚠️</span> {errors.jobRole}
-//             </p>
-//           )}
-//         </div>
-
-//         {/* JOB DESCRIPTION */}
-//         <div>
-//           <textarea
-//             placeholder="Job Description"
-//             className={`w-full border p-2 rounded h-24 ${
-//               errors.jd ? "border-red-500" : ""
-//             }`}
-//             value={form.jd}
-//             onChange={(e) => setForm({ ...form, jd: e.target.value })}
-//           />
-//           {errors.jd && (
-//             <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//               <span>⚠️</span> {errors.jd}
-//             </p>
-//           )}
-//         </div>
-
-//         {/* QUALIFICATION */}
-//         <div>
-//           <input
-//             placeholder="Qualification"
-//             className={`w-full border p-2 rounded ${
-//               errors.qualification ? "border-red-500" : ""
-//             }`}
-//             value={form.qualification}
-//             onChange={(e) => setForm({ ...form, qualification: e.target.value })}
-//           />
-//           {errors.qualification && (
-//             <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//               <span>⚠️</span> {errors.qualification}
-//             </p>
-//           )}
-//         </div>
-
-//         {/* CRITERIA */}
-//         <div>
-//           <input
-//             placeholder="Criteria"
-//             className={`w-full border p-2 rounded ${
-//               errors.criteria ? "border-red-500" : ""
-//             }`}
-//             value={form.criteria}
-//             onChange={(e) => setForm({ ...form, criteria: e.target.value })}
-//           />
-//           {errors.criteria && (
-//             <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//               <span>⚠️</span> {errors.criteria}
-//             </p>
-//           )}
-//         </div>
-
-//         {/* QUESTION COUNTS */}
-//         <div className="flex gap-3">
-
-//           {/* APTITUDE */}
-//           <div className="w-1/3">
-//             <input
-//               type="number"
-//               placeholder="Aptitude"
-//               className={`w-full border p-2 rounded ${
-//                 errors.aptitude ? "border-red-500" : ""
-//               }`}
-//               value={form.questions.aptitude}
-//               onChange={(e) =>
-//                 setForm({
-//                   ...form,
-//                   questions: {
-//                     ...form.questions,
-//                     aptitude: Number(e.target.value)
-//                   },
-//                 })
-//               }
-//             />
-//             {errors.aptitude && (
-//               <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//                 <span>⚠️</span> {errors.aptitude}
-//               </p>
-//             )}
-//           </div>
-
-//           {/* TECHNICAL */}
-//           <div className="w-1/3">
-//             <input
-//               type="number"
-//               placeholder="Technical"
-//               className={`w-full border p-2 rounded ${
-//                 errors.technical ? "border-red-500" : ""
-//               }`}
-//               value={form.questions.technical}
-//               onChange={(e) =>
-//                 setForm({
-//                   ...form,
-//                   questions: {
-//                     ...form.questions,
-//                     technical: Number(e.target.value)
-//                   },
-//                 })
-//               }
-//             />
-//             {errors.technical && (
-//               <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//                 <span>⚠️</span> {errors.technical}
-//               </p>
-//             )}
-//           </div>
-
-//           {/* SOFTSKILL */}
-//           <div className="w-1/3">
-//             <input
-//               type="number"
-//               placeholder="Softskill"
-//               className={`w-full border p-2 rounded ${
-//                 errors.softskill ? "border-red-500" : ""
-//               }`}
-//               value={form.questions.softskill}
-//               onChange={(e) =>
-//                 setForm({
-//                   ...form,
-//                   questions: {
-//                     ...form.questions,
-//                     softskill: Number(e.target.value)
-//                   },
-//                 })
-//               }
-//             />
-//             {errors.softskill && (
-//               <p className="flex items-center gap-1 text-red-600 text-sm font-medium mt-1">
-//                 <span>⚠️</span> {errors.softskill}
-//               </p>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* TOTAL QUESTIONS ERROR */}
-//         {errors.total && (
-//           <p className="flex items-center gap-1 text-red-700 text-sm font-semibold mt-1">
-//             <span>⚠️</span> {errors.total}
-//           </p>
-//         )}
-
-//         {/* BUTTONS */}
-//         <div className="flex gap-3 pt-3">
-//           <button
-//             type="submit"
-//             className="px-4 py-2 bg-green-600 text-white rounded"
-//           >
-//             Create
-//           </button>
-
-//           <button
-//             type="button"
-//             onClick={() => setShowCreate(false)}
-//             className="px-4 py-2 bg-gray-300 rounded"
-//           >
-//             Cancel
-//           </button>
-//         </div>
-
-//       </form>
-//     </div>
-//   </div>
-// )}
-
-
-
-//       <table className="w-full border-collapse">
-//         <thead>
-//           <tr className="text-left">
-//             <th className="border p-2">Job Role</th>
-//             <th className="border p-2">Created</th>
-//             <th className="border p-2">Active</th>
-//             <th className="border p-2">Link</th>
-//             <th className="border p-2">Actions</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {interviews.map((iv) => (
-//             <tr key={iv._id}>
-//               <td className="border p-2">{iv.jobRole}</td>
-//               <td className="border p-2">{new Date(iv.createdAt).toLocaleString()}</td>
-//               <td className="border p-2">{iv.isActive ? "Yes" : "No"}</td>
-//               <td className="border p-2">
-//                 <a className="text-blue-600" href={`/interview/${iv.slug}/apply`} target="_blank" rel="noreferrer">{`/interview/${iv.slug}/apply`}</a>
-//               </td>
-//               <td className="border p-2">
-//                 <button onClick={() => toggleActive(iv._id, iv.isActive)} className="px-2 py-1 bg-yellow-400 rounded">Toggle Active</button>
-//               </td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// }
-
-
-
 // pages/admin/index.js
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
@@ -367,19 +39,21 @@ export default function AdminIndex() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return router.push("/admin/login");
+   useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    fetchList();
-    fetchReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (async () => {
+      await loadInterviews();
+      await loadReports();
+    })();
   }, []);
 
-  async function fetchList() {
+ async function loadInterviews() {
+      console.log("typeof fetch =", typeof fetch);
+  console.log("fetch value =", fetch);
     try {
       setLoadingInterviews(true);
-     const res = await fetch("/api/admin/interviews", {
+     const res = await window.fetch("/api/admin/interviews", {
   credentials: "include",
 });
 
@@ -392,17 +66,17 @@ export default function AdminIndex() {
     }
   }
 
-  async function fetchReports() {
+ async function loadReports() {
     try {
       setLoadingReports(true);
-     const res = await fetch("/api/admin/reports", {
+     const res = await window.fetch("/api/admin/reports", {
   credentials: "include",
 });
 
       const data = await res.json();
       if (data.ok) setReports(data.reports || []);
     } catch (err) {
-      console.error("fetchReports error", err);
+      console.error("loadReports error", err);
     } finally {
       setLoadingReports(false);
     }
@@ -426,7 +100,7 @@ export default function AdminIndex() {
       console.log("CREATE RESPONSE:", data);
 
       if (data.ok) {
-        fetchList();
+       loadInterviews();
         setShowCreate(false);
         alert("Created — candidate link:\n" + data.link);
       } else {
@@ -462,7 +136,7 @@ export default function AdminIndex() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !current }),
       });
-      fetchList();
+     loadInterviews();
     } catch (err) {
       console.error("toggleActive error", err);
     }
@@ -959,7 +633,7 @@ export default function AdminIndex() {
                     if (data.ok) {
                       selectedReport.shortlisted = newStatus;
                       setShowReportModal(false);
-                      fetchReports(); // refresh table
+                      loadReports(); // refresh table
                     }
                   }}
                   className={`px-2 py-2 rounded-md text-white ${selectedReport.shortlisted ? "bg-red-600" : "bg-green-600"

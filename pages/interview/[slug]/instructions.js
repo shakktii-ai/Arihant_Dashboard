@@ -430,7 +430,7 @@
 
 
 // File: pages/instructions/[sessionId].jsx
-"use client";
+// "use client";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { Mic, CheckCircle, Clock, FileText } from "lucide-react";
