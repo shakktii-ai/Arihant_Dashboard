@@ -445,11 +445,11 @@ const VoiceQuestion = dynamic(
 export default function InstructionsPage() {
  const router = useRouter();
 const { sessionId, slug } = router.query;
-
 useEffect(() => {
-  if (!router.isReady) return;
+  if (!router.isReady || !sessionId) return;
   fetchSession();
-}, [router.isReady]);
+}, [router.isReady, sessionId]);
+
 
 
   // session data
