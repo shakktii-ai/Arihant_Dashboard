@@ -1,19 +1,593 @@
+// // components/VoiceQuestion.jsx
+// "use client";
+// import { useEffect, useRef, useState } from "react";
 
+// /**
+//  * VoiceQuestion
+//  * Props:
+//  * - sessionId: string
+//  * - section: 'technical'|'softskill'
+//  * - questionIndex: number
+//  * - prompt: string
+//  */
+// export default function VoiceQuestion({ sessionId, section, questionIndex, prompt }) {
+//   const [isListening, setIsListening] = useState(false);
+//   const [isRecording, setIsRecording] = useState(false);
+//   const [recordedText, setRecordedText] = useState("");
+//   const [isSubmitted, setIsSubmitted] = useState(false);
+//   const mediaRecorderRef = useRef(null);
+//   const recordedChunksRef = useRef([]);
+//   const recognitionRef = useRef(null);
+//   const [micPermission, setMicPermission] = useState("unknown"); // "unknown"|"granted"|"denied"
+
+//   // Initialize SpeechRecognition with auto-restart
+//   const setupSpeechRecognition = (onTranscriptUpdate) => {
+//     if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+//       return null;
+//     }
+//     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+//     const recognitionInstance = new SpeechRecognition();
+
+//     recognitionInstance.lang = "en-US";
+//     recognitionInstance.continuous = true;
+//     recognitionInstance.interimResults = true;
+//     recognitionInstance.maxAlternatives = 1;
+
+//     let currentTranscript = "";
+
+//     recognitionInstance.onstart = () => {
+//       // reset partial transcript for a fresh recording
+//       if (!isSubmitted) {
+//         currentTranscript = "";
+//         onTranscriptUpdate("");
+//       }
+//       setIsListening(true);
+//     };
+
+//     recognitionInstance.onresult = (event) => {
+//       if (event.results && event.results.length > 0) {
+//         const lastResult = event.results[event.results.length - 1];
+//         const latestTranscript = lastResult[0].transcript || "";
+
+//         if (lastResult.isFinal) {
+//           currentTranscript = (currentTranscript + " " + latestTranscript).replace(/\s+/g, " ").trim();
+//         }
+
+//         const fullTranscript = (currentTranscript + " " + (lastResult.isFinal ? "" : latestTranscript)).replace(/\s+/g, " ").trim();
+//         onTranscriptUpdate(fullTranscript);
+//       }
+//     };
+
+//     recognitionInstance.onend = () => {
+//       setIsListening(false);
+//       // auto-restart if still recording and user didn't explicitly request stop
+//       if (!isSubmitted && isRecording && !window.stopRecognitionRequested) {
+//         setTimeout(() => {
+//           try {
+//             recognitionInstance.start();
+//           } catch (e) {
+//             console.warn("Auto-restart failed", e);
+//             setIsListening(false);
+//           }
+//         }, 120);
+//       }
+//     };
+
+//     recognitionInstance.onerror = (event) => {
+//       console.error("Speech recognition error:", event);
+//       switch (event.error) {
+//         case "no-speech":
+//           // keep listening
+//           break;
+//         case "not-allowed":
+//         case "permission-denied":
+//         case "audio-capture":
+//           setMicPermission("denied");
+//           setIsListening(false);
+//           break;
+//         default:
+//           break;
+//       }
+//     };
+
+//     return recognitionInstance;
+//   };
+
+//   // Start recording + recognition
+//   const start = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+//       setMicPermission("granted");
+
+//       // MediaRecorder
+//       const mediaRecorder = new MediaRecorder(stream);
+//       recordedChunksRef.current = [];
+//       mediaRecorder.ondataavailable = (e) => {
+//         if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+//       };
+//       mediaRecorder.onstop = () => {
+//         // release tracks
+//         try {
+//           stream.getTracks().forEach((t) => t.stop());
+//         } catch (e) {}
+//       };
+//       mediaRecorder.start();
+//       mediaRecorderRef.current = mediaRecorder;
+//       setIsRecording(true);
+
+//       // SpeechRecognition
+//       const recognition = setupSpeechRecognition((t) => setRecordedText(t));
+//       recognitionRef.current = recognition;
+//       window.stopRecognitionRequested = false;
+//       if (recognition) {
+//         try {
+//           recognition.start();
+//         } catch (e) {
+//           console.warn("recognition.start() error:", e);
+//         }
+//       } else {
+//         console.warn("SpeechRecognition not supported");
+//       }
+//     } catch (err) {
+//       console.error("getUserMedia error:", err);
+//       setMicPermission("denied");
+//       setIsRecording(false);
+//       setIsListening(false);
+//       alert("Please allow microphone access to record your answer.");
+//     }
+//   };
+
+//   // Stop recording + recognition
+//   const stop = () => {
+//     window.stopRecognitionRequested = true;
+//     if (recognitionRef.current) {
+//       try {
+//         recognitionRef.current.stop();
+//       } catch (e) {
+//         console.warn("recognition stop err:", e);
+//       }
+//     }
+//     setIsListening(false);
+
+//     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+//       try {
+//         mediaRecorderRef.current.stop();
+//       } catch (e) {
+//         console.warn("mediaRecorder stop err:", e);
+//       }
+//     }
+//     setIsRecording(false);
+//   };
+
+//   // Submit transcript + audio
+//   const submit = async () => {
+//     setIsSubmitted(true);
+//     if (isRecording) stop();
+
+//     let audioBlob = null;
+//     if (recordedChunksRef.current && recordedChunksRef.current.length) {
+//       audioBlob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+//     }
+
+//     const fd = new FormData();
+//     fd.append("sessionId", sessionId);
+//     fd.append("section", section);
+//     fd.append("questionIndex", String(questionIndex));
+//     fd.append("transcript", recordedText || "");
+//     if (audioBlob) fd.append("audio", audioBlob, `session-${sessionId}-${section}-${questionIndex}.webm`);
+
+//     try {
+//       const res = await fetch("/api/admin/interviews/upload-audio", {
+//         method: "POST",
+//         body: fd,
+//       });
+//       const j = await res.json();
+//       if (j.ok) {
+//         // Optionally show success UI rather than alert
+//         alert("Voice answer submitted.");
+//       } else {
+//         alert("Submit failed: " + (j.error || "unknown"));
+//         setIsSubmitted(false);
+//       }
+//     } catch (err) {
+//       console.error("submit error", err);
+//       alert("Submission error");
+//       setIsSubmitted(false);
+//     }
+//   };
+
+//   // cleanup on unmount
+//   useEffect(() => {
+//     return () => {
+//       window.stopRecognitionRequested = true;
+//       try {
+//         if (recognitionRef.current) {
+//           recognitionRef.current.onend = null;
+//           recognitionRef.current.stop();
+//         }
+//       } catch (e) {}
+//       try {
+//         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+//           mediaRecorderRef.current.stop();
+//         }
+//       } catch (e) {}
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   return (
+//     <div className="border rounded p-4 my-3">
+//       <div className="mb-2">
+//         <div className="font-medium">{questionIndex + 1}. {prompt}</div>
+//         <div className="text-sm text-gray-600">Answer using your voice. Live transcript shown below.</div>
+//       </div>
+
+//       <div className="mb-3">
+//         <div className="p-3 bg-gray-50 rounded min-h-[66px]">
+//           {recordedText ? (
+//             <div className="whitespace-pre-wrap">{recordedText}</div>
+//           ) : (
+//             <div className="text-sm text-gray-400">No speech detected yet</div>
+//           )}
+//         </div>
+//       </div>
+
+//       <div className="flex items-center gap-2">
+//         {!isRecording && !isSubmitted && (
+//           <button onClick={start} className="px-3 py-1 bg-blue-600 text-white rounded">Start Recording</button>
+//         )}
+
+//         {isRecording && (
+//           <button onClick={stop} className="px-3 py-1 bg-red-600 text-white rounded">Stop Recording</button>
+//         )}
+
+//         <button
+//           onClick={submit}
+//           className="px-3 py-1 bg-green-600 text-white rounded"
+//           disabled={isSubmitted}
+//         >
+//           {isSubmitted ? "Submitted" : "Submit Answer"}
+//         </button>
+
+//         {micPermission === "denied" && (
+//           <div className="text-sm text-red-600 ml-3">Microphone permission denied. Please allow mic access.</div>
+//         )}
+
+//         {isListening && <div className="ml-3 text-sm text-green-600">Listening…</div>}
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+// // components/VoiceQuestion.jsx
+// "use client";
+// import { useEffect, useRef, useState } from "react";
+
+// /**
+//  * VoiceQuestion
+//  * Props:
+//  * - sessionId: string
+//  * - section: 'technical'|'softskill'
+//  * - questionIndex: number
+//  * - prompt: string
+//  */
+// export default function VoiceQuestion({ sessionId, section, questionIndex, prompt }) {
+//   const [isListening, setIsListening] = useState(false);
+//   const [isRecording, setIsRecording] = useState(false);
+//   const [recordedText, setRecordedText] = useState("");
+//   const [isSubmitted, setIsSubmitted] = useState(false);
+//   const [micPermission, setMicPermission] = useState("unknown"); // "unknown"|"granted"|"denied"
+//   const [noSpeechWarning, setNoSpeechWarning] = useState(false);
+
+//   const mediaRecorderRef = useRef(null);
+//   const recordedChunksRef = useRef([]);
+//   const recognitionRef = useRef(null);
+//   const streamRef = useRef(null);
+
+//   // live refs to avoid stale closures in handlers
+//   const isRecordingRef = useRef(isRecording);
+//   const isSubmittedRef = useRef(isSubmitted);
+//   const isListeningRef = useRef(isListening);
+
+//   useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
+//   useEffect(() => { isSubmittedRef.current = isSubmitted; }, [isSubmitted]);
+//   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+
+//   // no-speech handling/backoff refs
+//   const noSpeechCountRef = useRef(0);
+//   const lastErrorRef = useRef(null);
+//   const backoffTimerRef = useRef(null);
+
+//   const MAX_NO_SPEECH_BEFORE_BACKOFF = 3;
+//   const BACKOFF_MS = 2000;
+
+//   const createRecognition = (onTranscriptUpdate) => {
+//     if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) return null;
+//     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+//     const rec = new SpeechRecognition();
+
+//     rec.lang = "en-US";
+//     rec.continuous = true;
+//     rec.interimResults = true;
+//     rec.maxAlternatives = 1;
+
+//     let confirmedTranscript = "";
+
+//     rec.onstart = () => {
+//       lastErrorRef.current = null;
+//       setIsListening(true);
+//       confirmedTranscript = "";
+//       onTranscriptUpdate("");
+//       // reset warning when recognition actually starts
+//       setNoSpeechWarning(false);
+//     };
+
+//     rec.onresult = (event) => {
+//       if (!event.results || event.results.length === 0) return;
+//       let interim = "";
+//       for (let i = 0; i < event.results.length; i++) {
+//         const result = event.results[i];
+//         const t = result[0]?.transcript || "";
+//         if (result.isFinal) {
+//           confirmedTranscript = (confirmedTranscript + " " + t).replace(/\s+/g, " ").trim();
+//         } else {
+//           interim += " " + t;
+//         }
+//       }
+//       const full = (confirmedTranscript + " " + interim).replace(/\s+/g, " ").trim();
+//       onTranscriptUpdate(full);
+//     };
+
+//     rec.onerror = (e) => {
+//       // Save the last error for onend logic
+//       lastErrorRef.current = e.error;
+//       console.warn("SpeechRecognition error:", e);
+
+//       switch (e.error) {
+//         case "no-speech":
+//           // don't mark permission denied — just note it and allow onend to decide restart/backoff
+//           break;
+//         case "not-allowed":
+//         case "permission-denied":
+//         case "audio-capture":
+//           setMicPermission("denied");
+//           setIsListening(false);
+//           break;
+//         default:
+//           // other errors — leave to onend to possibly restart
+//           break;
+//       }
+//     };
+
+//     rec.onend = () => {
+//       setIsListening(false);
+
+//       // If recording was stopped intentionally or submission happened, do nothing
+//       if (!isRecordingRef.current || isSubmittedRef.current) return;
+
+//       // If the last error was "no-speech", increment count & possibly backoff
+//       if (lastErrorRef.current === "no-speech") {
+//         noSpeechCountRef.current = (noSpeechCountRef.current || 0) + 1;
+//       } else {
+//         // clear no-speech counter on successful speech or other errors
+//         noSpeechCountRef.current = 0;
+//       }
+
+//       if (noSpeechCountRef.current >= MAX_NO_SPEECH_BEFORE_BACKOFF) {
+//         // show UI warning and set a backoff before trying again
+//         setNoSpeechWarning(true);
+//         if (backoffTimerRef.current) clearTimeout(backoffTimerRef.current);
+//         backoffTimerRef.current = setTimeout(() => {
+//           noSpeechCountRef.current = 0;
+//           setNoSpeechWarning(false);
+//           // attempt restart only if still recording
+//           if (isRecordingRef.current && recognitionRef.current) {
+//             try { recognitionRef.current.start(); } catch (err) { console.warn("auto-restart after backoff failed", err); }
+//           }
+//         }, BACKOFF_MS);
+//         return;
+//       }
+
+//       // Otherwise try a quick restart (small debounce)
+//       setTimeout(() => {
+//         if (!isListeningRef.current && isRecordingRef.current && recognitionRef.current) {
+//           try { recognitionRef.current.start(); } catch (err) { console.warn("recognition auto-restart failed", err); }
+//         }
+//       }, 120);
+//     };
+
+//     return rec;
+//   };
+
+//   const start = async () => {
+//     if (isRecordingRef.current) return;
+
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+//       setMicPermission("granted");
+//       streamRef.current = stream;
+
+//       // MediaRecorder
+//       const mediaRecorder = new MediaRecorder(stream);
+//       recordedChunksRef.current = [];
+//       mediaRecorder.ondataavailable = (e) => {
+//         if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+//       };
+//       mediaRecorder.onstop = () => {
+//         try { stream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+//       };
+//       mediaRecorderRef.current = mediaRecorder;
+//       mediaRecorder.start();
+
+//       setIsRecording(true);
+
+//       // Setup recognition
+//       noSpeechCountRef.current = 0;
+//       lastErrorRef.current = null;
+//       setNoSpeechWarning(false);
+
+//       const recognition = createRecognition((t) => setRecordedText(t));
+//       recognitionRef.current = recognition;
+
+//       if (recognition) {
+//         try { recognition.start(); } catch (e) { console.warn("recognition.start() error:", e); }
+//       } else {
+//         console.warn("SpeechRecognition not supported");
+//       }
+//     } catch (err) {
+//       console.error("getUserMedia error:", err);
+//       setMicPermission("denied");
+//       setIsRecording(false);
+//       setIsListening(false);
+//       alert("Please allow microphone access to record your answer.");
+//     }
+//   };
+
+//   const stop = () => {
+//     setIsRecording(false);
+
+//     // stop recognition gracefully
+//     const rec = recognitionRef.current;
+//     if (rec) {
+//       try {
+//         rec.onend = rec.onerror = rec.onresult = rec.onstart = null;
+//         rec.stop();
+//       } catch (e) { console.warn("recognition stop err:", e); }
+//       recognitionRef.current = null;
+//     }
+//     setIsListening(false);
+
+//     // stop media recorder
+//     const mr = mediaRecorderRef.current;
+//     if (mr && mr.state !== "inactive") {
+//       try { mr.stop(); } catch (e) { console.warn("mediaRecorder stop err:", e); }
+//     }
+//     mediaRecorderRef.current = null;
+
+//     try {
+//       if (streamRef.current) {
+//         streamRef.current.getTracks().forEach((t) => t.stop());
+//         streamRef.current = null;
+//       }
+//     } catch (e) {}
+//   };
+
+//   const submit = async () => {
+//     if (isSubmittedRef.current) return;
+//     if (isRecordingRef.current) stop();
+
+//     setIsSubmitted(true);
+
+//     let audioBlob = null;
+//     if (recordedChunksRef.current && recordedChunksRef.current.length) {
+//       try {
+//         audioBlob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+//       } catch (e) {
+//         audioBlob = new Blob(recordedChunksRef.current);
+//       }
+//     }
+
+//     const fd = new FormData();
+//     fd.append("sessionId", sessionId);
+//     fd.append("section", section);
+//     fd.append("questionIndex", String(questionIndex));
+//     fd.append("transcript", recordedText || "");
+//     if (audioBlob) fd.append("audio", audioBlob, `session-${sessionId}-${section}-${questionIndex}.webm`);
+
+//     try {
+//       const res = await fetch("/api/admin/interviews/upload-audio", { method: "POST", body: fd });
+//       const j = await res.json();
+//       if (j.ok) {
+//         alert("Voice answer submitted.");
+//       } else {
+//         alert("Submit failed: " + (j.error || "unknown"));
+//         setIsSubmitted(false);
+//       }
+//     } catch (err) {
+//       console.error("submit error", err);
+//       alert("Submission error");
+//       setIsSubmitted(false);
+//     }
+//   };
+
+//   // cleanup on unmount
+//   useEffect(() => {
+//     return () => {
+//       isRecordingRef.current = false;
+//       isSubmittedRef.current = true;
+//       try {
+//         if (recognitionRef.current) { recognitionRef.current.onend = null; recognitionRef.current.stop(); recognitionRef.current = null; }
+//       } catch (e) {}
+//       try { if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") mediaRecorderRef.current.stop(); } catch (e) {}
+//       try { if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; } } catch (e) {}
+//       if (backoffTimerRef.current) clearTimeout(backoffTimerRef.current);
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   return (
+//     <div className="border rounded p-4 my-3">
+//       <div className="mb-2">
+//         <div className="font-medium">{questionIndex + 1}. {prompt}</div>
+//         <div className="text-sm text-gray-600">Answer using your voice. Live transcript shown below.</div>
+//       </div>
+
+//       <div className="mb-3">
+//         <div className="p-3 bg-gray-50 rounded min-h-[66px]">
+//           {recordedText ? (
+//             <div className="whitespace-pre-wrap">{recordedText}</div>
+//           ) : (
+//             <div className="text-sm text-gray-400">No speech detected yet</div>
+//           )}
+//         </div>
+//         {noSpeechWarning && (
+//           <div className="text-sm text-yellow-700 mt-2">No speech detected — please check your mic or speak louder.</div>
+//         )}
+//       </div>
+
+//       <div className="flex items-center gap-2">
+//         {!isRecording && !isSubmitted && (
+//           <button onClick={start} className="px-3 py-1 bg-blue-600 text-white rounded">Start Recording</button>
+//         )}
+
+//         {isRecording && (
+//           <button onClick={stop} className="px-3 py-1 bg-red-600 text-white rounded">Stop Recording</button>
+//         )}
+
+//         <button
+//           onClick={submit}
+//           className="px-3 py-1 bg-green-600 text-white rounded"
+//           disabled={isSubmitted || isRecording}
+//         >
+//           {isSubmitted ? "Submitted" : "Submit Answer"}
+//         </button>
+
+//         {micPermission === "denied" && (
+//           <div className="text-sm text-red-600 ml-3">Microphone permission denied. Please allow mic access.</div>
+//         )}
+
+//         {isListening && <div className="ml-3 text-sm text-green-600">Listening…</div>}
+//       </div>
+//     </div>
+//   );
+// }
 
 
 // components/VoiceQuestion.jsx
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-
+/**
+ * VoiceQuestion
+ * Props:
+ * - sessionId: string
+ * - section: 'technical'|'softskill'
+ * - questionIndex: number
+ * - prompt: string
+ */
 export default function VoiceQuestion({ sessionId, section, questionIndex, prompt,onSubmitSuccess }) {
-   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
- 
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [rawTranscript, setRawTranscript] = useState("");
@@ -410,7 +984,9 @@ export default function VoiceQuestion({ sessionId, section, questionIndex, promp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!mounted) return null;
+  /* -----------------------
+     Render UI
+     ----------------------- */
 
   return (
     <div className="border rounded p-4 my-3">
