@@ -430,15 +430,27 @@
 
 
 // File: pages/instructions/[sessionId].jsx
-"use client";
+// "use client";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { Mic, CheckCircle, Clock, FileText } from "lucide-react";
-import VoiceQuestion from "../../../components/VoiceQuestion";
+import dynamic from "next/dynamic";
+
+const VoiceQuestion = dynamic(
+  () => import("../../../components/VoiceQuestion"),
+  { ssr: false }
+);
+
 
 export default function InstructionsPage() {
-  const router = useRouter();
-  const { sessionId, slug } = router.query;
+ const router = useRouter();
+const { sessionId, slug } = router.query;
+
+useEffect(() => {
+  if (!router.isReady) return;
+  fetchSession();
+}, [router.isReady]);
+
 
   // session data
   const [session, setSession] = useState(null);
@@ -466,11 +478,7 @@ export default function InstructionsPage() {
   // time left (seconds) for current activeTab
   const [timeLeft, setTimeLeft] = useState(SECTION_TIMERS[activeTab] || 0);
 
-  useEffect(() => {
-    if (!sessionId) return;
-    fetchSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+
 
   // whenever activeTab changes, reset timer to that section's duration
   useEffect(() => {
