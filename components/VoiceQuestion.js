@@ -579,15 +579,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-/**
- * VoiceQuestion
- * Props:
- * - sessionId: string
- * - section: 'technical'|'softskill'
- * - questionIndex: number
- * - prompt: string
- */
+
 export default function VoiceQuestion({ sessionId, section, questionIndex, prompt,onSubmitSuccess }) {
+   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [rawTranscript, setRawTranscript] = useState("");
