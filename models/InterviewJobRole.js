@@ -1,15 +1,12 @@
+//models/InterviewJobRole.js
 const mongoose = require('mongoose');
 
-const JobRoleSchema = new mongoose.Schema({
-   
+const InterviewJobRoleSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
   },
-  email: {
-    type: String,
-    required: true,
-  },
+ 
   level: {
     type: String,
     required: true,
@@ -32,4 +29,4 @@ const JobRoleSchema = new mongoose.Schema({
   ],
 }, { timestamps: true });
 
-module.exports = mongoose.models.JobRole || mongoose.model('JobRole', JobRoleSchema);
+module.exports = mongoose.models.InterviewJobRole || mongoose.model('InterviewJobRole', InterviewJobRoleSchema);

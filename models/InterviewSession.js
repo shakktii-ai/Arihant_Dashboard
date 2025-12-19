@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const AnswerSchema = new mongoose.Schema(
   {
-    section: String, // 'apti'|'technical'|'softskill'
+    section: String, // 'apti' | 'technical' | 'softskill'
     questionIndex: Number,
     response: mongoose.Schema.Types.Mixed,
     audioPath: String,
@@ -20,7 +20,12 @@ const InterviewSessionSchema = new mongoose.Schema(
       required: true,
     },
 
-    jobInfo: { type: mongoose.Schema.Types.ObjectId, ref: "JobInfo", required: true },
+    jobInfo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobInfo",
+      required: true,
+    },
+
     slug: { type: String, required: true },
 
     candidate: {
@@ -31,9 +36,24 @@ const InterviewSessionSchema = new mongoose.Schema(
     },
 
     generatedQuestions: {
-      aptitude: [{ prompt: String, options: [String], correctOptionIndex: Number }],
-      technical: [{ prompt: String, hint: String }],
-      softskill: [{ prompt: String }],
+      aptitude: [
+        {
+          prompt: String,
+          options: [String],
+          correctOptionIndex: Number,
+        },
+      ],
+      technical: [
+        {
+          prompt: String,
+          hint: String,
+        },
+      ],
+      softskill: [
+        {
+          prompt: String,
+        },
+      ],
     },
 
     answers: [AnswerSchema],
@@ -44,8 +64,37 @@ const InterviewSessionSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    reportGenerated: { type: Boolean, default: false },
-    completedAt: { type: Date },
+    // =============================
+    // ⭐ REPORT LIFECYCLE (NEW)
+    // =============================
+    reportGenerated: {
+      type: Boolean,
+      default: false,
+    },
+
+    reportStatus: {
+      type: String,
+      enum: ["pending", "generating", "done", "failed"],
+      default: "pending",
+    },
+
+    reportError: {
+      type: String,
+    },
+    questionStatus: {
+      type: String,
+      enum: ["pending", "generating", "done", "failed"],
+      default: "pending",
+    },
+
+    questionError: {
+      type: String,
+    },
+
+
+    completedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

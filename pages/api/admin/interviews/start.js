@@ -121,138 +121,282 @@
 
 
 
+//pages/api/admin/intrviews/start.js
 
-
-// pages/api/admin/interview/start.js
 import dbConnect from "../../../../lib/db";
 import JobInfo from "../../../../models/JobInfo";
 import InterviewSession from "../../../../models/InterviewSession";
 
+/* ================= MAIN HANDLER ================= */
+
 export default async function handler(req, res) {
   await dbConnect();
 
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return res.status(405).json({ ok: false, detail: "Only POST allowed" });
+  }
 
   const { slug, candidate } = req.body;
-  if (!slug || !candidate)
+  if (!slug || !candidate) {
     return res.status(400).json({ ok: false, detail: "Missing data" });
+  }
 
-  // -----------------------------
-  // 1. Find job by slug
-  // -----------------------------
-  const job = await JobInfo.findOne({ slug, isActive: true });
-
-  if (!job)
-    return res.status(404).json({ ok: false, detail: "Interview not found or inactive" });
-
-  // IMPORTANT: job MUST contain companyId
-  const companyId = job.companyId;
-
-  if (!companyId)
-    return res.status(500).json({
-      ok: false,
-      detail: "Job is missing companyId — multi-company setup invalid",
-    });
-
-  // -----------------------------
-  // 2. Generate questions using OpenAI
-  // -----------------------------
-  const prompt = buildPrompt(job);
-  const openaiResp = await callOpenAI(prompt);
-
-  let parsed;
   try {
-    let jsonStr = extractJson(openaiResp);
-    parsed = JSON.parse(jsonStr);
+    /* 1️⃣ FIND JOB */
+    const job = await JobInfo.findOne({ slug, isActive: true });
+    if (!job) {
+      return res.status(404).json({ ok: false, detail: "Interview not found" });
+    }
+
+    if (!job.companyId) {
+      return res.status(500).json({
+        ok: false,
+        detail: "Job missing companyId",
+      });
+    }
+
+    /* 2️⃣ CREATE EMPTY SESSION */
+    const session = await InterviewSession.create({
+      companyId: job.companyId,
+      jobInfo: job._id,
+      slug: job.slug,
+      candidate,
+      generatedQuestions: {
+        aptitude: [],
+        technical: [],
+        softskill: [],
+      },
+      status: "in-progress",
+      questionStatus: "generating",
+    });
+
+    /* 3️⃣ RESPOND IMMEDIATELY */
+    const instructionsUrl = `/interview/${job.slug}/instructions?sessionId=${session._id}`;
+
+    res.status(201).json({
+      ok: true,
+      sessionId: session._id,
+      instructionsUrl,
+      msg: "Interview started. Questions generating.",
+    });
+
+    /* 4️⃣ BACKGROUND QUESTION GENERATION */
+    generateQuestionsInBackground(job, session._id)
+      .then(async () => {
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          questionStatus: "done",
+        });
+      })
+      .catch(async (err) => {
+        console.error("❌ Question generation failed:", err);
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          questionStatus: "failed",
+          questionError: err.message || "Question generation failed",
+        });
+      });
+
   } catch (err) {
-    console.error("OpenAI JSON Parse Failed:", openaiResp);
+    console.error("START API ERROR:", err);
     return res.status(500).json({
       ok: false,
-      detail: "Failed to parse generated questions",
-      error: err.message,
+      detail: err.message || "Internal Server Error",
     });
   }
+}
 
-  if (!parsed.aptitude || !parsed.technical || !parsed.softskill) {
-    return res.status(500).json({
-      ok: false,
-      detail: "Invalid question structure from OpenAI",
-    });
-  }
+/* ================= BACKGROUND JOB ================= */
 
-  // -----------------------------
-  // 3. Create interview session
-  // -----------------------------
-  const session = new InterviewSession({
-    companyId,                 // ⭐ CRUCIAL FOR MULTI-COMPANY
-    jobInfo: job._id,
-    slug: job.slug,
-    candidate,
-    generatedQuestions: parsed,
-    status: "in-progress",
-  });
+async function generateQuestionsInBackground(job, sessionId) {
+  const aptitude = await generateAptitude(job);
+  const technical = await generateTechnical(job);
+  const softskill = await generateSoftskill(job);
 
-  await session.save();
+  const combined = {
+    aptitude,
+    technical,
+    softskill,
+  };
 
-  const instructionsUrl = `/interview/${job.slug}/instructions?sessionId=${session._id}`;
-
-  return res.status(201).json({
-    ok: true,
-    sessionId: session._id,
-    instructionsUrl,
-    generated: parsed,
+  await InterviewSession.findByIdAndUpdate(sessionId, {
+    generatedQuestions: combined,
   });
 }
 
-/* UTILITIES */
+/* ================= APTITUDE ================= */
 
-function extractJson(str) {
-  let s = str.trim();
+async function generateAptitude(job) {
+  const aptiCount =
+    job.questions.aptitude ||
+    Math.ceil(job.questions.totalQuestions * 0.33);
 
-  if (s.includes("```json")) {
-    return s.split("```json")[1].split("```")[0].trim();
-  }
-  if (s.includes("```")) {
-    return s.split("```")[1].split("```")[0].trim();
-  }
-
-  const start = s.indexOf("{");
-  const end = s.lastIndexOf("}");
-  if (start !== -1 && end !== -1) return s.substring(start, end + 1);
-
-  return s; // fallback
-}
-
-function buildPrompt(job) {
-  const aptiCount = job.questions.apti || job.questions.aptitude || Math.ceil(job.questions.totalQuestions * 0.33);
-  const technicalCount = job.questions.technical;
-  const softCount = job.questions.softskill;
-
-  return `You are a question generator for interviews. Output ONLY valid JSON with this exact structure:
+  const prompt = `You are an interview question generator designed to simulate realistic hiring assessments for Indian workplace contexts.
+Generate ${aptiCount} aptitude questions.
+You must output ONLY valid JSON in the following exact structure:
+Return ONLY valid JSON:
 {
-  "aptitude": [{"prompt":"..", "options":["A","B","C","D"], "correctOptionIndex":0}, ...],
-  "technical": [{"prompt":"..", "hint":".."}, ...],
-  "softskill": [{"prompt":".."}, ...]
+  "aptitude": [
+    {
+      "prompt": "",
+      "options": ["A","B","C","D"],
+      "correctOptionIndex": 0,
+      "type": "numerical" | "logical" | "personality" | "attitude"
+    }
+  ]
 }
 
-Job Role: ${job.jobRole}
-JD: ${job.jd}
-Qualification: ${job.qualification}
-Criteria: ${job.criteria}
-Total questions: ${job.questions.totalQuestions}
-Distribution: aptitude ${aptiCount}, technical ${technicalCount}, softskill ${softCount}
+Context:
+- Job Role: ${job.jobRole}
+- JD: ${job.jd}
+- Qualification: ${job.qualification}
+- Criteria (Experience + Level): ${job.criteria}  ← e.g., "3–5 years, mid-level"
+- Industry: ${job.industry} ← e.g., Fintech, IT Services, EdTech
+- Company Type: ${job.companyType} ← e.g., startup, MNC, PSU, family business
+- Location: ${job.location} ← e.g., Bangalore, Tier 2 city
+- Target Market: ${job.targetMarket} ← e.g., B2B SaaS, public sector, SME clients
+- Sample Clients: ${job.clients} ← e.g., ["HDFC", "Flipkart", "Indian Railways"]
 
-Requirements:
-- Aptitude items: crisp multiple choice with 4 options; include correctOptionIndex (0-3).
-- Technical items: short prompts suitable for voice answers (60-90 seconds).
-- Softskill items: behavioral interview prompts for voice answers.
-- Return ONLY the JSON object, no markdown, no code blocks, no extra text.`;
+#### Assessment (Merged Aptitude + Psychometric):
+- Each item must include:
+  - "prompt": the question text
+  - "options": 4 choices
+  - "correctOptionIndex": integer from 0–3
+  - "type": one of:
+    - "numerical" → salary math, budget estimation, KM–INR conversion
+    - "logical" → pattern, deduction, conditionals
+    - "personality" → no correct answer; tests preferences or traits
+    - "attitude" → judgment, ethics, time pressure, dealing with failure or conflict
+- Questions must reflect **India-based work situations**, adjusted by:
+  - Experience level
+  - Industry and client type
+  - Region/city and local workplace behaviors
+- Use culturally accurate names, places, and examples:
+  - ₹5,000 bonus, Swiggy launch, train delay, Diwali deadline, Noida office
+`;
+
+  const raw = await callOpenAI(prompt);
+  const parsed = JSON.parse(extractJson(raw));
+
+  if (!parsed?.aptitude) {
+    throw new Error("Invalid aptitude output");
+  }
+
+  return parsed.aptitude;
 }
+
+/* ================= TECHNICAL ================= */
+
+async function generateTechnical(job) {
+  const technicalCount = job.questions.technical;
+
+  const prompt = `You are an interview question generator designed to simulate realistic hiring assessments for Indian workplace contexts.
+Generate ${technicalCount} technical interview questions.
+
+Return ONLY valid JSON:
+{
+  "technical": [
+    {
+      "prompt": "",
+      "hint": ""
+    }
+  ]
+}
+
+Context:
+- Job Role: ${job.jobRole}
+- JD: ${job.jd}
+- Qualification: ${job.qualification}
+- Criteria (Experience + Level): ${job.criteria}  ← e.g., "3–5 years, mid-level"
+- Industry: ${job.industry} ← e.g., Fintech, IT Services, EdTech
+- Company Type: ${job.companyType} ← e.g., startup, MNC, PSU, family business
+- Location: ${job.location} ← e.g., Bangalore, Tier 2 city
+- Target Market: ${job.targetMarket} ← e.g., B2B SaaS, public sector, SME clients
+- Sample Clients: ${job.clients} ← e.g., ["HDFC", "Flipkart", "Indian Railways"]
+
+#### Technical:
+- Generate voice-suitable scenario-based prompts (60–90 sec responses)
+- Focus on **real problems** from the JD (missed deadlines, team confusion, design decisions)
+- Include a "hint" to guide the candidate’s response direction
+- Adjust by experience level:
+  - Entry: concepts, definitions, basic tech handling
+  - Mid-level: applied scenarios, client issues, performance bugs
+  - Senior: design trade-offs, architecture, stakeholder management
+`;
+
+  const raw = await callOpenAI(prompt);
+  const parsed = JSON.parse(extractJson(raw));
+
+  if (!parsed?.technical) {
+    throw new Error("Invalid technical output");
+  }
+
+  return parsed.technical;
+}
+
+/* ================= SOFTSKILL ================= */
+
+async function generateSoftskill(job) {
+  const total = job.questions.totalQuestions;
+
+  const aptiCount =
+    job.questions.aptitude ||
+    Math.ceil(total * 0.33);
+
+  const technicalCount =
+    job.questions.technical ||
+    Math.ceil(total * 0.42);
+
+  const softCount =
+    job.questions.softskill ||
+    (total - aptiCount - technicalCount);
+
+  const prompt = `You are an interview question generator designed to simulate realistic hiring assessments for Indian workplace contexts.
+Generate ${softCount} softskill interview questions.
+
+Return ONLY valid JSON:
+{
+  "softskill": [
+    {
+      "prompt": ""
+    }
+  ]
+}
+
+Context:
+- Job Role: ${job.jobRole}
+- JD: ${job.jd}
+- Qualification: ${job.qualification}
+- Criteria (Experience + Level): ${job.criteria}  ← e.g., "3–5 years, mid-level"
+- Industry: ${job.industry} ← e.g., Fintech, IT Services, EdTech
+- Company Type: ${job.companyType} ← e.g., startup, MNC, PSU, family business
+- Location: ${job.location} ← e.g., Bangalore, Tier 2 city
+- Target Market: ${job.targetMarket} ← e.g., B2B SaaS, public sector, SME clients
+- Sample Clients: ${job.clients} ← e.g., ["HDFC", "Flipkart", "Indian Railways"]
+
+#### Softskill:
+- Use behavioral + situational interview prompts
+- Base them on **Indian team dynamics and pressure**:
+  - Festive deadlines
+  - Multi-location coordination (e.g., Pune–Hyderabad)
+  - Managing interns and juniors
+  - Speaking to senior managers or difficult clients
+- Match the challenge to the role seniority
+`;
+
+  const raw = await callOpenAI(prompt);
+  const parsed = JSON.parse(extractJson(raw));
+
+  if (!parsed?.softskill) {
+    throw new Error("Invalid softskill output");
+  }
+
+  return parsed.softskill;
+}
+
+/* ================= OPENAI CALL ================= */
 
 async function callOpenAI(prompt) {
   const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("Missing OpenAI key");
+  if (!key) throw new Error("Missing OpenAI API key");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -262,16 +406,51 @@ async function callOpenAI(prompt) {
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
+      temperature: 0.2,
       messages: [
-        { role: "system", content: "You generate only valid JSON." },
+        { role: "system", content: "Return ONLY valid JSON." },
         { role: "user", content: prompt },
       ],
-      temperature: 0.2,
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || "OpenAI error");
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("OpenAI RAW ERROR:", text);
+    throw new Error("OpenAI request failed");
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("OpenAI NON-JSON RESPONSE:", text);
+    throw new Error("Invalid OpenAI JSON");
+  }
 
   return data.choices?.[0]?.message?.content || "";
+}
+
+/* ================= JSON EXTRACT ================= */
+
+function extractJson(str) {
+  if (!str) return "";
+
+  let s = str.trim();
+
+  if (s.includes("```json")) {
+    return s.split("```json")[1].split("```")[0].trim();
+  }
+
+  if (s.includes("```")) {
+    return s.split("```")[1].split("```")[0].trim();
+  }
+
+  const start = s.indexOf("{");
+  const end = s.lastIndexOf("}");
+
+  return start !== -1 && end !== -1
+    ? s.substring(start, end + 1)
+    : s;
 }

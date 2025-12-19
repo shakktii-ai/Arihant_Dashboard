@@ -137,6 +137,7 @@ export default function ApplyPage() {
     setLoading(false);
 
     if (data.ok) {
+      localStorage.setItem("candidateEmail", form.email);
       router.push(data.instructionsUrl);
     } else {
       alert("Error starting interview: " + (data.detail || "unknown"));

@@ -31,38 +31,60 @@ export default async function handler(req, res) {
     }
   }
 
-  // ============================================================
-  // POST — create new interview
-  // ============================================================
-  if (req.method === "POST") {
-    try {
-      const body = req.body || {};
+ // ============================================================
+// POST — create new interview
+// ============================================================
+if (req.method === "POST") {
+  try {
+    const body = req.body || {};
 
-      const questions = {
-        totalQuestions: Number(body.questions?.totalQuestions || 60),
-        aptitude: Number(body.questions?.aptitude || 0),
-        technical: Number(body.questions?.technical || 0),
-        softskill: Number(body.questions?.softskill || 0),
-      };
-
-      const payload = {
-        companyId, // ⭐ REQUIRED
-        jd: body.jd,
-        jobRole: body.jobRole,
-        qualification: body.qualification,
-        criteria: body.criteria,
-        questions,
-        isActive: true,
-      };
-
-      const job = await JobInfo.create(payload);
-
-      return res.status(201).json({ ok: true, job });
-    } catch (err) {
-      console.error("Create Interview Error:", err);
-      return res.status(500).json({ ok: false, error: err.message });
+    // validate minimal required fields
+    if (
+      !body.jobRole ||
+      !body.jd ||
+      !body.qualification ||
+      !body.criteria ||
+      !body.industry ||
+      !body.companyType ||
+      !body.location ||
+      !body.targetMarket
+    ) {
+      return res.status(400).json({ ok: false, error: "Missing required fields" });
     }
+
+    const questions = {
+      totalQuestions: Number(body.questions?.totalQuestions || 60),
+      aptitude: Number(body.questions?.aptitude || 0),
+      technical: Number(body.questions?.technical || 0),
+      softskill: Number(body.questions?.softskill || 0),
+    };
+
+    const payload = {
+      companyId, // 🔐 from token
+      jobRole: body.jobRole,
+      jd: body.jd,
+      qualification: body.qualification,
+      criteria: body.criteria,
+
+      // 🔥 NEW CONTEXT FIELDS
+      industry: body.industry,
+      companyType: body.companyType,
+      location: body.location,
+      targetMarket: body.targetMarket,
+      clients: Array.isArray(body.clients) ? body.clients : [],
+
+      questions,
+      isActive: true,
+    };
+
+    const job = await JobInfo.create(payload);
+
+    return res.status(201).json({ ok: true, job });
+  } catch (err) {
+    console.error("Create Interview Error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
+}
 
   // Fallback
   res.setHeader("Allow", ["GET", "POST"]);

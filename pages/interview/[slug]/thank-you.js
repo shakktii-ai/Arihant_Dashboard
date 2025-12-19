@@ -9,7 +9,7 @@ export default function ThankYou() {
   useEffect(() => {
     // Redirect after 5 seconds
     const timer = setTimeout(() => {
-      router.push('/admin');
+       router.push('/admin/Mock/role');
     }, 5000);
 
     setIsLoading(false);
@@ -42,7 +42,7 @@ export default function ThankYou() {
         </div>
 
         <button
-          onClick={() => router.push('/admin')}
+          onClick={() => router.push('/admin/Mock/role')}
           className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105"
         >
           Go Home Now

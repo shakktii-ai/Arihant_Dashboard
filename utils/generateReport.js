@@ -93,27 +93,38 @@
 //   }
 // }
 
-
+//utils/generateReport.js
 import Report from "../models/Report";
 
-async function getAIReport(analysisData) {
+async function getAIReport(analysisData,job) {
   const url = "https://api.openai.com/v1/chat/completions";
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
   };
 
-  const prompt = `You are an expert interview evaluator. Produce a professional evaluation with
-numeric scoring similar to:
+ const prompt = `You are an expert interview evaluator for modern Indian workplace hiring.
 
-- Technical Proficiency: 3/10
-- Communication: 2/10
-- Decision-making: 2/10
-- Confidence: 3/10
-- Language Fluency: 3/10
-- Overall: 13/50
+You are given a candidate’s responses from a simulated hiring assessment consisting of:
+- aptitude (MCQs)
+- technical (voice-based technical answers)
+- softskill (behavioral and situational answers)
 
-Return STRICT JSON in this exact structure:
+You are also given company context to judge real-world role alignment.
+
+Your task is to generate a STRICT, FAIR, DATA-AWARE evaluation.
+You MUST account for assessment completeness and section coverage.
+
+--------------------------------------------------
+CRITICAL COMPLETENESS DATA (DO NOT IGNORE):
+- answeredCount: ${analysisData.answeredCount}
+- totalQuestions: ${analysisData.totalQuestions}
+
+Compute:
+completionRatio = answeredCount / totalQuestions
+--------------------------------------------------
+
+RETURN STRICT JSON ONLY in the exact structure below:
 
 {
   "scores": {
@@ -121,46 +132,122 @@ Return STRICT JSON in this exact structure:
     "communication": <0-10>,
     "decisionMaking": <0-10>,
     "confidence": <0-10>,
-    "languageFluency": <0-10>
+    "languageFluency": <0-10>,
+    "culturalFit": <0-10>
   },
-
-  "overallScore": <0-50>,
-
+  "overallScore": <0-60>,
+  "personalityType": {
+    "label": "",
+    "description": ""
+  },
+  "culturalFit": {
+    "summary": "",
+    "alignment": "High" | "Moderate" | "Low"
+  },
+  "roleFit": {
+    "match": "High" | "Medium" | "Low",
+    "explanation": ""
+  },
   "evaluationText": {
     "technicalProficiency": "",
     "communication": "",
     "decisionMaking": "",
     "confidence": "",
     "languageFluency": "",
+    "culturalFit": "",
     "overallSummary": ""
   },
-
   "improvementResources": {
     "technicalProficiency": [],
     "communication": [],
     "decisionMaking": [],
     "confidence": [],
-    "languageFluency": []
+    "languageFluency": [],
+    "culturalFit": []
   },
-   "recommendation": "" 
+  "recommendation": "Proceed" | "Borderline" | "Cannot Proceed"
 }
 
-Rules:
-- ALWAYS give a score out of 10 for each category.
-- overallScore = sum of the 5 category scores (max 50).
-- Recommendation logic:
-    • If overall.score >= 25 → "Proceed"
-    • If 16–24 → "Borderline"
-    • If < 15 → "Cannot Proceed" depending on data completeness.
+--------------------------------------------------
+SCORING RULES (MANDATORY):
+- Each score must be an integer between 0 and 10
+- overallScore = sum of all 6 category scores (max 60)
 
-- The text must be factual, professional.
-- If data is missing → give a low score but mention insufficient information.
-- No extra text outside JSON.
-Interview Data:
+--------------------------------------------------
+COMPLETENESS GATING (STRICT – MUST FOLLOW):
+
+1️⃣ If completionRatio < 0.25:
+- overallScore MUST be ≤ 15
+- recommendation MUST be "Cannot Proceed"
+- roleFit.match MUST be "Low"
+- culturalFit.alignment MUST be "Low"
+- Clearly mention "assessment incomplete" in evaluationText.overallSummary
+
+2️⃣ If completionRatio >= 0.25 AND < 0.5:
+- overallScore MUST be ≤ 30
+- recommendation CANNOT be "Proceed"
+- roleFit.match MUST be "Low" or "Medium"
+
+3️⃣ Only if completionRatio >= 0.5:
+- Normal evaluation is allowed
+
+--------------------------------------------------
+SECTION-WISE SCORING RULES:
+
+- technicalProficiency:
+  - Must be based ONLY on technical answers
+  - If fewer than 30% of technical questions are answered → score MUST be ≤ 3
+
+- communication, confidence, languageFluency:
+  - Must be based ONLY on softskill + voice responses
+  - If softskill answers are missing or very few → scores MUST be ≤ 3
+
+- decisionMaking:
+  - Must reflect aptitude accuracy and reasoning
+  - Sparse or weak aptitude responses → score MUST be ≤ 4
+
+- culturalFit:
+  - If softskill responses are missing → alignment MUST be "Low"
+
+--------------------------------------------------
+EVALUATION RULES:
+- Do NOT assume competence from silence or missing data
+- Absence of evidence is NOT evidence of skill
+- Be conservative when data is limited
+- Judge clarity, not accent
+- Judge depth relative to experience level
+- Cultural fit must reflect Indian workplace realities:
+  hierarchy, ownership, deadlines, manager expectations
+
+--------------------------------------------------
+RECOMMENDATION LOGIC (STRICT):
+- overallScore ≥ 40 AND completionRatio ≥ 0.5 → "Proceed"
+- 25–39 → "Borderline"
+- < 25 → "Cannot Proceed"
+
+--------------------------------------------------
+JOB CONTEXT:
+- Job Role: ${job.jobRole}
+- JD: ${job.jd}
+- Qualification: ${job.qualification}
+- Criteria: ${job.criteria}
+- Industry: ${job.industry}
+- Company Type: ${job.companyType}
+- Office Location: ${job.location}
+- Target Market: ${job.targetMarket}
+- Sample Clients: ${job.clients?.join(", ") || "N/A"}
+
+--------------------------------------------------
+INTERVIEW DATA:
 ${JSON.stringify(analysisData, null, 2)}
-`;
 
-  const payload = {
+REMEMBER:
+- Output VALID JSON ONLY
+- No markdown
+- No explanations
+- No assumptions beyond provided data
+`;
+ const payload = {
     model: "gpt-4o-mini",
     temperature: 0.2,
     messages: [
@@ -178,25 +265,46 @@ ${JSON.stringify(analysisData, null, 2)}
   const data = await response.json();
   const text = data?.choices?.[0]?.message?.content || "{}";
 
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("AI JSON Parse Failed:", text);
-    return null;
+ try {
+  const report = JSON.parse(text);
+
+  if (report?.scores) {
+    for (const key in report.scores) {
+      report.scores[key] = Number(report.scores[key] || 0);
+    }
   }
+
+  report.overallScore = Number(report.overallScore || 0);
+
+  return report;
+} catch (err) {
+  console.error("AI JSON Parse Failed:", text);
+  return null;
+}
+
 }
 // MAIN REPORT FUNCTION
 export async function generateAndSaveReport(session, candidate) {
   try {
+    const job = session.jobInfo;
+    if (!job) {
+  throw new Error("Job context missing for report generation");
+}
+
     const analysisData = {
-      jobRole: session.jobInfo?.jobRole || "Unknown Role",
-      candidate: {
-        name: candidate?.name,
-        email: candidate?.email,
-        collegeName: candidate?.collegeName || "Unknown College"
-      },
-      answers: {}
-    };
+  jobRole: job.jobRole,
+  criteria: job.criteria,
+  industry: job.industry,
+  companyType: job.companyType,
+  location: job.location,
+  targetMarket: job.targetMarket,
+  candidate: {
+    name: candidate?.name,
+    email: candidate?.email,
+  },
+  answers: {}
+};
+
 
     const totalQuestions =
       (session.generatedQuestions?.aptitude?.length || 0) +
@@ -240,7 +348,7 @@ export async function generateAndSaveReport(session, candidate) {
 
 
     // Generate report using AI
-    const report = await getAIReport(analysisData);
+    const report = await getAIReport(analysisData,job);
     if (!report) throw new Error("AI report generation failed");
 
     // ---------------------------
@@ -251,7 +359,7 @@ await Report.create({
   companyId: session.companyId,
   role: session.jobInfo?.jobRole || "Unknown Role",
   email: candidate?.email,
-  collageName: candidate?.collegeName || "Unknown College",
+  
   reportAnalysis: report,
   sessionId: session._id
 });

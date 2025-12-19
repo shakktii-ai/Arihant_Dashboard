@@ -28,18 +28,29 @@ export default function AdminIndex() {
   const [showCreate, setShowCreate] = useState(false);
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
-    jd: "",
     jobRole: "",
+    jd: "",
     qualification: "",
     criteria: "",
-    questions: { totalQuestions: 60, aptitude: 20, technical: 25, softskill: 15 },
+    industry: "",
+    companyType: "",
+    location: "",
+    targetMarket: "",
+    clients: "", // comma-separated string
+    questions: {
+      totalQuestions: 60,
+      aptitude: 20,
+      technical: 25,
+      softskill: 15,
+    },
   });
+
 
   // report modal
   const [selectedReport, setSelectedReport] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
-   useEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     (async () => {
@@ -48,14 +59,14 @@ export default function AdminIndex() {
     })();
   }, []);
 
- async function loadInterviews() {
-      console.log("typeof fetch =", typeof fetch);
-  console.log("fetch value =", fetch);
+  async function loadInterviews() {
+    console.log("typeof fetch =", typeof fetch);
+    console.log("fetch value =", fetch);
     try {
       setLoadingInterviews(true);
-     const res = await window.fetch("/api/admin/interviews", {
-  credentials: "include",
-});
+      const res = await window.fetch("/api/admin/interviews", {
+        credentials: "include",
+      });
 
       const data = await res.json();
       if (data.ok) setInterviews(data.interviews || []);
@@ -66,12 +77,12 @@ export default function AdminIndex() {
     }
   }
 
- async function loadReports() {
+  async function loadReports() {
     try {
       setLoadingReports(true);
-     const res = await window.fetch("/api/admin/reports", {
-  credentials: "include",
-});
+      const res = await window.fetch("/api/admin/reports", {
+        credentials: "include",
+      });
 
       const data = await res.json();
       if (data.ok) setReports(data.reports || []);
@@ -90,17 +101,24 @@ export default function AdminIndex() {
     if (Object.keys(v).length > 0) return;
 
     try {
+      const payload = {
+        ...form,
+        clients: form.clients
+          ? form.clients.split(",").map(c => c.trim()).filter(Boolean)
+          : [],
+      };
+
       const res = await fetch("/api/admin/interviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-        credentials: "include", 
+        body: JSON.stringify(payload),
+        credentials: "include",
       });
       const data = await res.json();
       console.log("CREATE RESPONSE:", data);
 
       if (data.ok) {
-       loadInterviews();
+        loadInterviews();
         setShowCreate(false);
         alert("Created — candidate link:\n" + data.link);
       } else {
@@ -118,6 +136,10 @@ export default function AdminIndex() {
     if (!form.jd.trim()) err.jd = "Job description is required";
     if (!form.qualification.trim()) err.qualification = "Qualification is required";
     if (!form.criteria.trim()) err.criteria = "Criteria is required";
+    if (!form.industry.trim()) err.industry = "Industry is required";
+    if (!form.companyType.trim()) err.companyType = "Company type is required";
+    if (!form.location.trim()) err.location = "Location is required";
+    if (!form.targetMarket.trim()) err.targetMarket = "Target market is required";
 
     const { aptitude, technical, softskill, totalQuestions } = form.questions;
     if (aptitude < 1) err.aptitude = "Must be at least 1";
@@ -136,7 +158,7 @@ export default function AdminIndex() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !current }),
       });
-     loadInterviews();
+      loadInterviews();
     } catch (err) {
       console.error("toggleActive error", err);
     }
@@ -441,12 +463,16 @@ export default function AdminIndex() {
         </div>
         {/* Create Modal */}
         {showCreate && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl p-6 relative">
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white w-full max-w-3xl rounded-lg shadow-xl relative flex flex-col max-h-[90vh]">
               <button onClick={() => setShowCreate(false)} className="absolute right-4 top-4 text-gray-600">✕</button>
               <h3 className="text-xl font-semibold mb-4">Create Interview</h3>
 
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form
+                onSubmit={handleCreate}
+                className="p-6 overflow-y-auto space-y-4 flex-1"
+              >
+
                 <div>
                   <label className="text-sm font-medium">Job Role</label>
                   <input value={form.jobRole} onChange={(e) => setForm({ ...form, jobRole: e.target.value })} className="mt-1 block w-full border rounded p-2" />
@@ -459,24 +485,93 @@ export default function AdminIndex() {
                   {errors.jd && <div className="text-xs text-red-600 mt-1">{errors.jd}</div>}
                 </div>
                 <div>
-  <label className="text-sm font-medium">Qualification</label>
-  <input
-    value={form.qualification}
-    onChange={(e) => setForm({ ...form, qualification: e.target.value })}
-    className="mt-1 block w-full border rounded p-2"
-  />
-  {errors.qualification && <div className="text-xs text-red-600 mt-1">{errors.qualification}</div>}
-</div>
+                  <label className="text-sm font-medium">Qualification</label>
+                  <input
+                    value={form.qualification}
+                    onChange={(e) => setForm({ ...form, qualification: e.target.value })}
+                    className="mt-1 block w-full border rounded p-2"
+                  />
+                  {errors.qualification && <div className="text-xs text-red-600 mt-1">{errors.qualification}</div>}
+                </div>
 
-<div>
-  <label className="text-sm font-medium">Criteria</label>
-  <input
-    value={form.criteria}
-    onChange={(e) => setForm({ ...form, criteria: e.target.value })}
-    className="mt-1 block w-full border rounded p-2"
-  />
-  {errors.criteria && <div className="text-xs text-red-600 mt-1">{errors.criteria}</div>}
-</div>
+                <div>
+                  <label className="text-sm font-medium">Criteria</label>
+                  <input
+                    value={form.criteria}
+                    onChange={(e) => setForm({ ...form, criteria: e.target.value })}
+                    className="mt-1 block w-full border rounded p-2"
+                  />
+                  {errors.criteria && <div className="text-xs text-red-600 mt-1">{errors.criteria}</div>}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div>
+                    <label className="text-sm font-medium">Industry</label>
+                    <input
+                      value={form.industry}
+                      onChange={(e) => setForm({ ...form, industry: e.target.value })}
+                      className="mt-1 block w-full border rounded p-2"
+                      placeholder="Fintech, EdTech, IT Services"
+                    />
+                    {errors.industry && <p className="text-xs text-red-600">{errors.industry}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Company Type</label>
+                    <select
+                      value={form.companyType}
+                      onChange={(e) => setForm({ ...form, companyType: e.target.value })}
+                      className="mt-1 block w-full border rounded p-2"
+                    >
+                      <option value="">Select</option>
+                      <option value="Startup">Startup</option>
+                      <option value="MNC">MNC</option>
+                      <option value="PSU">PSU</option>
+                      <option value="Family Business">Family Business</option>
+                    </select>
+                    {errors.companyType && <p className="text-xs text-red-600">{errors.companyType}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Location</label>
+                    <input
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                      className="mt-1 block w-full border rounded p-2"
+                      placeholder="Bangalore, Pune, Noida"
+                    />
+                    {errors.location && <p className="text-xs text-red-600">{errors.location}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Target Market</label>
+                    <select
+                      value={form.targetMarket}
+                      onChange={(e) => setForm({ ...form, targetMarket: e.target.value })}
+                      className="mt-1 block w-full border rounded p-2"
+                    >
+                      <option value="">Select</option>
+                      <option value="B2B SaaS">B2B SaaS</option>
+                      <option value="SME Clients">SME Clients</option>
+                      <option value="Public Sector">Public Sector</option>
+                      <option value="Enterprise">Enterprise</option>
+                    </select>
+                    {errors.targetMarket && <p className="text-xs text-red-600">{errors.targetMarket}</p>}
+                  </div>
+
+                </div>
+                <div>
+                  <label className="text-sm font-medium">
+                    Clients <span className="text-xs text-gray-500">(comma separated)</span>
+                  </label>
+                  <input
+                    value={form.clients}
+                    onChange={(e) => setForm({ ...form, clients: e.target.value })}
+                    className="mt-1 block w-full border rounded p-2"
+                    placeholder="HDFC Bank, Flipkart, Govt of Karnataka"
+                  />
+                </div>
+
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
@@ -511,151 +606,204 @@ export default function AdminIndex() {
         {/* ===========================
      BEAUTIFUL REPORT MODAL
     =========================== */}
-        {showReportModal && selectedReport && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-6 overflow-auto max-h-[90vh] relative">
+       {showReportModal && selectedReport && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-5xl rounded-xl shadow-2xl p-6 overflow-auto max-h-[90vh] relative">
 
-              {/* Close */}
-              <button
-                onClick={closeReportModal}
-                className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 text-xl"
+      {/* Close */}
+      <button
+        onClick={closeReportModal}
+        className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 text-xl"
+      >
+        ✕
+      </button>
+
+      {/* ================= HEADER ================= */}
+      <div className="border-b pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {selectedReport.email}
+          </h2>
+          <p className="text-sm text-gray-600">{selectedReport.role}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Report generated on{" "}
+            {new Date(selectedReport.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        {/* Recommendation Badge */}
+        <div>
+          <span
+            className={`px-4 py-2 rounded-full text-sm font-semibold
+              ${selectedReport.reportAnalysis?.recommendation === "Proceed"
+                ? "bg-green-100 text-green-700"
+                : selectedReport.reportAnalysis?.recommendation === "Borderline"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-red-100 text-red-700"}
+            `}
+          >
+            {selectedReport.reportAnalysis?.recommendation}
+          </span>
+        </div>
+      </div>
+
+      {/* ================= HIRING VERDICT ================= */}
+      <div className="mt-6 p-5 rounded-lg border bg-gray-50">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+          Hiring Verdict
+        </h3>
+        <p className="text-sm text-gray-700 leading-relaxed">
+          <strong>Role Fit:</strong>{" "}
+          {selectedReport.reportAnalysis?.roleFit?.match} —{" "}
+          {selectedReport.reportAnalysis?.roleFit?.explanation}
+        </p>
+      </div>
+
+      {/* ================= SCORECARD ================= */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Candidate Scorecard
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {Object.entries(selectedReport.reportAnalysis?.scores || {}).map(
+            ([key, value]) => (
+              <div
+                key={key}
+                className="p-4 rounded-lg border bg-white shadow-sm"
               >
-                ✕
-              </button>
+                <div className="text-sm font-medium text-gray-600 capitalize">
+                  {key.replace(/([A-Z])/g, " $1")}
+                </div>
 
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b pb-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{selectedReport.email}</h2>
-                  <p className="text-sm text-gray-500">{selectedReport.role}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(selectedReport.createdAt).toLocaleString()}
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {value}/10
+                  </div>
+                  <div className="w-24 h-2 bg-gray-200 rounded-full">
+                    <div
+                      className={`h-full rounded-full ${
+                        value >= 7
+                          ? "bg-green-500"
+                          : value >= 4
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                      style={{ width: `${(value / 10) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+
+        <p className="text-sm text-gray-500 mt-3">
+          Overall Score:{" "}
+          <strong>
+            {selectedReport.reportAnalysis?.overallScore} / 60
+          </strong>
+        </p>
+      </div>
+
+      {/* ================= DETAILED EVALUATION ================= */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Section-wise Evaluation
+        </h3>
+
+        <div className="space-y-4">
+          {Object.entries(
+            selectedReport.reportAnalysis?.evaluationText || {}
+          ).map(
+            ([key, value]) =>
+              key !== "overallSummary" && (
+                <div
+                  key={key}
+                  className="p-4 border rounded-lg bg-white shadow-sm"
+                >
+                  <div className="font-medium text-gray-900 capitalize">
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </div>
+                  <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                    {value}
                   </p>
                 </div>
+              )
+          )}
+        </div>
+      </div>
 
-                {/* Recommendation Badge
-                <div>
-                  <span className={`px-4 py-2 rounded-full text-sm font-medium
-            ${selectedReport.reportAnalysis?.recommendation === "Proceed" ? "bg-green-100 text-green-700" :
-                      selectedReport.reportAnalysis?.recommendation === "Borderline" ? "bg-yellow-100 text-yellow-700" :
-                        selectedReport.reportAnalysis?.recommendation === "Cannot Proceed" ? "bg-red-100 text-red-700" :
-                          "bg-gray-100 text-gray-600"}
-          `}>
-                    {selectedReport.reportAnalysis?.recommendation || "Pending"}
-                  </span>
-                </div> */}
-              </div>
+      {/* ================= OVERALL SUMMARY ================= */}
+      <div className="mt-8 p-5 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-lg font-semibold text-blue-800">
+          Overall Assessment Summary
+        </h3>
+        <p className="text-sm text-blue-900 mt-2 leading-relaxed">
+          {selectedReport.reportAnalysis?.evaluationText?.overallSummary}
+        </p>
+      </div>
 
-              {/* Scores Section */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Performance Scores</h3>
+      {/* ================= IMPROVEMENT PLAN ================= */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Recommended Improvement Areas
+        </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {Object.entries(selectedReport.reportAnalysis?.scores || {}).map(([key, value]) => (
-                    <div key={key} className="p-4 rounded-lg border bg-gray-50">
-                      <div className="text-sm font-medium text-gray-700 capitalize">
-                        {key.replace(/([A-Z])/g, " $1")}
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="text-xl font-bold text-gray-900">{value}/10</div>
-                        <div className="w-20 h-2 bg-gray-300 rounded-full">
-                          <div
-                            className="h-full bg-indigo-600 rounded-full"
-                            style={{ width: `${(value / 10) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        <div className="p-4 border bg-gray-50 rounded-lg">
+          <ul className="list-disc ml-5 text-sm text-gray-700 space-y-2">
+            {Object.values(
+              selectedReport.reportAnalysis?.improvementResources || {}
+            )
+              .flat()
+              .map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+          </ul>
+        </div>
+      </div>
 
-              {/* Evaluation Explanation */}
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Detailed Evaluation</h3>
+      {/* ================= ACTIONS ================= */}
+      <div className="flex justify-between items-center mt-8">
+        <button
+          onClick={async () => {
+            const newStatus = !selectedReport.shortlisted;
 
-                <div className="space-y-4">
-                  {Object.entries(selectedReport.reportAnalysis?.evaluationText || {}).map(([k, v]) => (
-                    k !== "overallSummary" && (
-                      <div key={k} className="p-4 border rounded-lg bg-white shadow-sm">
-                        <div className="font-medium text-gray-900 capitalize">
-                          {k.replace(/([A-Z])/g, " $1")}
-                        </div>
-                        <p className="text-sm text-gray-700 mt-1 leading-relaxed">{v}</p>
-                      </div>
-                    )
-                  ))}
-                </div>
-              </div>
+            const res = await fetch(
+              `/api/admin/reports/${selectedReport._id}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ shortlisted: newStatus }),
+              }
+            );
 
-              {/* Overall Summary */}
-              <div className="mt-8 p-5 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-blue-800">Overall Summary</h3>
-                <p className="text-sm text-blue-900 mt-2 leading-relaxed">
-                  {selectedReport.reportAnalysis?.evaluationText?.overallSummary || "No summary provided."}
-                </p>
-              </div>
+            const data = await res.json();
+            if (data.ok) {
+              selectedReport.shortlisted = newStatus;
+              setShowReportModal(false);
+              loadReports();
+            }
+          }}
+          className={`px-4 py-2 rounded-md text-white font-medium
+            ${selectedReport.shortlisted ? "bg-red-600" : "bg-green-600"}
+          `}
+        >
+          {selectedReport.shortlisted
+            ? "Remove from Shortlist"
+            : "Shortlist Candidate"}
+        </button>
 
-              {/* Improvement Resources */}
-              {/* Improvement Resources - Unified Section */}
-              {/* Improvement Resources – unified list */}
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Improvement Recommendations</h3>
-
-                <div className="p-4 border bg-gray-50 rounded-lg">
-                  <ul className="list-disc ml-5 text-sm text-gray-700 space-y-2">
-
-                    {Object.values(selectedReport.reportAnalysis?.improvementResources || {})
-                      .flat()
-                      .map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))
-                    }
-
-                  </ul>
-                </div>
-              </div>
-              <div className="flex justify-between items-center mt-6">
-               
-
-                {/* Action Button */}
-                <button
-                  onClick={async () => {
-                    const newStatus = !selectedReport.shortlisted;
-
-                    const res = await fetch(`/api/admin/reports/${selectedReport._id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ shortlisted: newStatus }),
-                    });
-
-                    const data = await res.json();
-                    if (data.ok) {
-                      selectedReport.shortlisted = newStatus;
-                      setShowReportModal(false);
-                      loadReports(); // refresh table
-                    }
-                  }}
-                  className={`px-2 py-2 rounded-md text-white ${selectedReport.shortlisted ? "bg-red-600" : "bg-green-600"
-                    }`}
-                >
-                  {selectedReport.shortlisted ? "Remove Shortlist" : "Shortlist Candidate"}
-                </button>
-              </div>
-
-
-              {/* Footer */}
-              <div className="mt-10 flex justify-end">
-                <button
-                  onClick={closeReportModal}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <button
+          onClick={closeReportModal}
+          className="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
       </div>

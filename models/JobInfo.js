@@ -15,13 +15,13 @@ const JobInfoSchema = new mongoose.Schema(
       default: () => nanoid(10),
     },
 
-    jd: {
+    jobRole: {
       type: String,
       required: true,
       trim: true,
     },
 
-    jobRole: {
+    jd: {
       type: String,
       required: true,
       trim: true,
@@ -30,11 +30,43 @@ const JobInfoSchema = new mongoose.Schema(
     qualification: {
       type: String,
       required: true,
+      trim: true,
     },
 
     criteria: {
       type: String,
       required: true,
+      trim: true,
+    },
+
+    // 🔥 NEW CONTEXT FIELDS (AI quality depends on this)
+    industry: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    companyType: {
+      type: String,
+      enum: ["Startup", "MNC", "PSU", "Family Business"],
+      required: true,
+    },
+
+    location: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    targetMarket: {
+      type: String,
+      enum: ["B2B SaaS", "SME Clients", "Public Sector", "Enterprise"],
+      required: true,
+    },
+
+    clients: {
+      type: [String],
+      default: [],
     },
 
     questions: {
