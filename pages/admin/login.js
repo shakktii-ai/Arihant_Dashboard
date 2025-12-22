@@ -5,14 +5,15 @@ import Link from "next/link";
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const router = useRouter();
-
+  const [loading,setLoading]=useState(false);
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+setLoading(true);
+try{
     const res = await fetch("/api/admin/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,6 +28,11 @@ export default function Login() {
       router.push("/admin");
     } else {
       alert(data.error || "Login failed");
+    }
+  } catch (err) {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,14 +59,15 @@ export default function Login() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition"
           >
-            Login
+            {loading ? "Login..." : "Login"}
           </button>
           <div className="text-center mt-4">
   <p className="text-sm text-gray-600">
     Don’t have an account?{" "}
-    <Link href="/admin/signup" className="text-blue-600 hover:underline">
+    <Link href="/admin/signup"  className="text-blue-600 hover:underline">
       SignUp
     </Link>
   </p>

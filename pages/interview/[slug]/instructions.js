@@ -369,18 +369,16 @@ export default function InstructionsPage() {
   }
 }, [timeLeft]);
 
+
 useEffect(() => {
-  if (!sectionStartedAt.aptitude && activeTab === "aptitude") {
-    setSectionStartedAt((s) => ({
-      ...s,
-      aptitude: Date.now(),
+  if (!sectionStartedAt[activeTab]) {
+    setSectionStartedAt((prev) => ({
+      ...prev,
+      [activeTab]: Date.now(),
     }));
   }
 }, [activeTab, sectionStartedAt]);
 
-useEffect(() => {
-  setTimeLeft(SECTION_TIMERS[activeTab]);
-}, [activeTab, SECTION_TIMERS]);
 
 
   /* ================= POLLING ================= */

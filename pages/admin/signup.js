@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 
 export default function Signup() {
   const router = useRouter();
-
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     companyName: "",
     name: "",
@@ -17,7 +17,8 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setLoading(true);
+    try{
     const res = await fetch("/api/admin/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -29,6 +30,13 @@ export default function Signup() {
     if (res.ok) {
       alert("Signup successful!");
       return router.push("/admin/login");
+    }else {
+        alert(data.error || "Signup failed");
+      }
+    } catch (err) {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
 
     alert(data.error || "Signup failed");
@@ -72,9 +80,10 @@ export default function Signup() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
           >
-            Signup
+            {loading ? "SignUp..." : "SignUp"}
           </button>
         </form>
       </div>

@@ -9,7 +9,7 @@ export default function ThankYou() {
   useEffect(() => {
     // Redirect after 5 seconds
     const timer = setTimeout(() => {
-       router.push('/admin/Mock/role');
+       router.push('/admin/mock/role');
     }, 8000);
 
     setIsLoading(false);

@@ -215,7 +215,7 @@ function Instruction() {
 
     const handleStartInterview = () => {
         if (deviceTests.speaker.done && deviceTests.microphone.done) {
-            router.push('/admin/Mock/questionForm');
+            router.push('/admin/mock/questionForm');
         } else {
             let message = 'Please complete the following tests before starting:\n';
             if (!deviceTests.speaker.done) message += '- Speaker Test\n';

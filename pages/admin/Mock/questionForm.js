@@ -407,7 +407,7 @@ export default function QuestionForm() {
       localStorage.setItem("_idForReport", interviewId);
       localStorage.removeItem("_id");
 
-      router.push("/admin/Mock/report");
+      router.push("/admin/mock/report");
       return;
     }
 

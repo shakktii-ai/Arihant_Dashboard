@@ -126,7 +126,7 @@ useEffect(() => {
     // Declare formattedQuestions here once
     let formattedQuestions = [];
     
-    router.push("/admin/Mock/instruction");
+    router.push("/admin/mock/instruction");
   
     // Replace this with a fetch request to your new API
     try {
