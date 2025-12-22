@@ -369,6 +369,20 @@ export default function InstructionsPage() {
   }
 }, [timeLeft]);
 
+useEffect(() => {
+  if (!sectionStartedAt.aptitude && activeTab === "aptitude") {
+    setSectionStartedAt((s) => ({
+      ...s,
+      aptitude: Date.now(),
+    }));
+  }
+}, [activeTab, sectionStartedAt]);
+
+useEffect(() => {
+  setTimeLeft(SECTION_TIMERS[activeTab]);
+}, [activeTab, SECTION_TIMERS]);
+
+
   /* ================= POLLING ================= */
   useEffect(() => {
     if (!sessionId) return;
@@ -457,7 +471,7 @@ export default function InstructionsPage() {
       if (document.hidden) {
         setTabViolations((v) => v + 1);
         setTabWarning(true);
-        setTimeout(() => setTabWarning(false), 3000);
+        setTimeout(() => setTabWarning(false), 8000);
       }
     };
 

@@ -122,7 +122,7 @@ function Report() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        Generating report...
+        Submitting your interview. Please wait…
       </div>
     );
   }
@@ -136,14 +136,24 @@ function Report() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white p-8">
-              <h1 className="text-4xl font-bold mb-4">Thank You!</h1>
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white flex items-center justify-center px-4 sm:px-6 lg:px-8">
+  <div className="w-full max-w-lg text-center bg-white/10 backdrop-blur-md p-6 sm:p-8 md:p-10 rounded-2xl shadow-xl">
 
-        <p className="text-lg text-gray-200 mb-6">
-          Your interview has been submitted successfully.
-        </p>
+    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
+      Thank You!
+    </h1>
 
-    </div>
+    <p className="text-base sm:text-lg text-gray-200">
+      Your interview has been submitted successfully.
+    </p>
+
+    <p className="text-xs sm:text-sm text-gray-300 mt-6">
+      You may safely close this window.
+    </p>
+
+  </div>
+</div>
+
   );
 }
 

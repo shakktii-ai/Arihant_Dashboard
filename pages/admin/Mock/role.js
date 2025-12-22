@@ -217,7 +217,7 @@ useEffect(() => {
             // Start with the "Introduce yourself" question as the first element
             const firstName = user?.fullName?.split(' ')[0];
             formattedQuestions = [{
-              questionText: ` hello ${firstName} Can you tell me about yourself, including your educational background and previous work experience?`,
+              questionText: `Can you tell me about yourself, including your educational background and previous work experience?`,
               answer: null,
             }];
   

@@ -115,34 +115,49 @@ export default function ApplyPage() {
   // ------------------------------
   // SUBMIT HANDLER
   // ------------------------------
-  async function handleSubmit(e) {
-    e.preventDefault();
+  // async function handleSubmit(e) {
+  //   e.preventDefault();
 
-    const v = validate();
-    if (Object.keys(v).length > 0) {
-      setErrors(v);
-      return;
-    }
+  //   const v = validate();
+  //   if (Object.keys(v).length > 0) {
+  //     setErrors(v);
+  //     return;
+  //   }
 
-    setErrors({});
-    setLoading(true);
+  //   setErrors({});
+  //   setLoading(true);
 
-    const res = await fetch("/api/admin/interviews/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, candidate: form }),
-    });
+  //   const res = await fetch("/api/admin/interviews/start", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ slug, candidate: form }),
+  //   });
 
-    const data = await res.json();
-    setLoading(false);
+  //   const data = await res.json();
+  //   setLoading(false);
 
-    if (data.ok) {
-      localStorage.setItem("candidateEmail", form.email);
-      router.push(data.instructionsUrl);
-    } else {
-      alert("Error starting interview: " + (data.detail || "unknown"));
-    }
+  //   if (data.ok) {
+  //     localStorage.setItem("candidateEmail", form.email);
+  //     router.push(data.instructionsUrl);
+  //   } else {
+  //     alert("Error starting interview: " + (data.detail || "unknown"));
+  //   }
+  // }
+async function handleSubmit(e) {
+  e.preventDefault();
+
+  const v = validate();
+  if (Object.keys(v).length > 0) {
+    setErrors(v);
+    return;
   }
+
+  // store candidate temporarily
+  localStorage.setItem("candidateForm", JSON.stringify(form));
+
+  // go to rules page
+  router.push(`/interview/${slug}/rules`);
+}
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
@@ -213,7 +228,7 @@ export default function ApplyPage() {
             className={`w-full py-3 text-white rounded-lg font-semibold shadow 
               ${loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
           >
-            {loading ? "Starting..." : "Start Interview"}
+            {loading ? "Next" : "Next"}
           </button>
         </form>
       </div>

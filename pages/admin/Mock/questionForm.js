@@ -403,13 +403,13 @@ export default function QuestionForm() {
     clearTimeout(timerRef.current);
 
     if (currentQuestionIndex >= questions.length - 1) {
-  // IMPORTANT: store jobRole/interview id for report
-  localStorage.setItem("_idForReport", interviewId);
-  localStorage.removeItem("_id");
+      // IMPORTANT: store jobRole/interview id for report
+      localStorage.setItem("_idForReport", interviewId);
+      localStorage.removeItem("_id");
 
-  router.push("/admin/Mock/report");
-  return;
-}
+      router.push("/admin/Mock/report");
+      return;
+    }
 
 
     setRecordedText("");
@@ -437,7 +437,7 @@ export default function QuestionForm() {
 
           {/* Progress */}
           <div className="mb-6">
-            <p className="text-gray-200 text-sm mb-2">
+            <p className="text-gray-700 text-sm mb-2">
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>
             <div className="w-full h-2 bg-gray-600 rounded-full overflow-hidden">
@@ -451,9 +451,9 @@ export default function QuestionForm() {
           </div>
 
           {/* Question */}
-          <h2 className="text-2xl font-bold text-center text-black mb-4">
+          {/* <h2 className="text-2xl font-bold text-center text-black mb-4">
             Question:
-          </h2>
+          </h2> */}
 
           <div className="bg-white rounded-xl px-6 py-4 text-lg text-center text-black mb-6">
             {questions[currentQuestionIndex]?.questionText}
@@ -487,8 +487,8 @@ export default function QuestionForm() {
               onClick={handleMicClick}
               disabled={isSpeaking}
               className={`w-20 h-20 rounded-full flex flex-col items-center justify-center text-white shadow-lg transition ${isListening
-                  ? "bg-red-600 animate-pulse"
-                  : "bg-gradient-to-br from-indigo-500 to-pink-500"
+                ? "bg-red-600 animate-pulse"
+                : "bg-gradient-to-br from-indigo-500 to-pink-500"
                 }`}
             >
               {isListening ? (
@@ -504,9 +504,9 @@ export default function QuestionForm() {
             {/* Next */}
             <button
               onClick={() => {
-  submitAnswer(recordedText);
-  goNext("manual");
-}}
+                submitAnswer(recordedText);
+                goNext("manual");
+              }}
 
               disabled={isListening || isSpeaking}
               className="w-20 h-20 rounded-full flex flex-col items-center justify-center text-white shadow-lg bg-gradient-to-br from-green-500 to-emerald-500 hover:scale-105 transition disabled:opacity-50"

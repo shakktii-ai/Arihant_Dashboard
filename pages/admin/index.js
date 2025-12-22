@@ -347,6 +347,9 @@ export default function AdminIndex() {
                             </div>
                             <div className="text-base font-semibold text-gray-900">{iv.jobRole || "Untitled Role"}</div>
                             <div className="text-sm text-gray-500 mt-1">{iv.jd ? iv.jd.slice(0, 300) + (iv.jd.length > 300 ? "…" : "") : "No job description"}</div>
+                            <div className="text-sm text-gray-500 mt-1">Qualification: {iv.qualification}</div>
+                            <div className="text-sm text-gray-500 mt-1">Criteria: {iv.criteria}</div>
+                            <div className="text-sm text-gray-500 mt-1">Location: {iv.location}</div>
                             <div className="mt-2 text-xs text-gray-400">{new Date(iv.createdAt).toLocaleString()}</div>
                           </div>
                           <div className="">
@@ -649,9 +652,7 @@ export default function AdminIndex() {
 
       {/* ================= HIRING VERDICT ================= */}
       <div className="mt-6 p-5 rounded-lg border bg-gray-50">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-          Hiring Verdict
-        </h3>
+       
         <p className="text-sm text-gray-700 leading-relaxed">
           <strong>Role Fit:</strong>{" "}
           {selectedReport.reportAnalysis?.roleFit?.match} —{" "}
