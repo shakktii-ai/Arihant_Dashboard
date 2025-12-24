@@ -6,32 +6,28 @@ export default function ThankYou() {
   const { slug } = router.query;
   const [isLoading, setIsLoading] = useState(true);
 
-  // useEffect(() => {
-  //    if (!slug) return; 
-  //   // Redirect after 5 seconds
-  //   console.log("slug =", slug);
-
-  //   const timer = setTimeout(() => {
-  //     router.push(`/admin/mock/role/${slug}`);
-
-  //   }, 8000);
-
-  //   setIsLoading(false);
-  //   return () => clearTimeout(timer);
-  // }, [router]);
-  useEffect(() => {
+  
+ useEffect(() => {
   if (!router.isReady) return;
-  if (!slug) return;
 
-  console.log("slug =", slug);
+  const safeSlug =
+    router.query.slug || localStorage.getItem("currentJobSlug");
+
+  if (!safeSlug) {
+    console.error("Missing job slug, cannot redirect");
+    return;
+  }
+
+  console.log("Redirecting with slug:", safeSlug);
 
   const timer = setTimeout(() => {
-    router.push(`/admin/mock/role/${slug}`);
+    router.push(`/admin/mock/role/${safeSlug}`);
   }, 8000);
 
   setIsLoading(false);
   return () => clearTimeout(timer);
-}, [router.isReady, slug]);
+}, [router.isReady, router.query.slug]);
+
 
 
   return (

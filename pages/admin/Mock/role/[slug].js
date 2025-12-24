@@ -9,7 +9,10 @@ import { toast, Toaster } from "react-hot-toast";
 
 export default function Role() {
   const router = useRouter();
-  const { slug } = router.query;
+ const slug =
+    router.query.slug || (typeof window !== "undefined"
+      ? localStorage.getItem("currentJobSlug")
+      : null);
   const [jobRole, setJobRole] = useState("");
   const [level, setLevel] = useState("Beginner");
   const [email, setEmail] = useState("");

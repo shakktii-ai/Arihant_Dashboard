@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState,useRef } from "react";
 export default function InstructionsPage() {
   const router = useRouter();
   const { sessionId, slug } = router.query;
+useEffect(() => {
+  if (slug) {
+    localStorage.setItem("currentJobSlug", slug);
+  }
+}, [slug]);
 
   /* ================= STATE ================= */
   const [session, setSession] = useState(null);
@@ -287,7 +292,11 @@ setTimeLeft(SECTION_TIMERS.technical); // ✅ IMPORTANT
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId }),
     });
-    router.push(`/interview/${slug}/thank-you`);
+   const safeSlug =
+  slug || localStorage.getItem("currentJobSlug");
+
+router.push(`/interview/${safeSlug}/thank-you`);
+
   }
 
   /* ================= UI ================= */
