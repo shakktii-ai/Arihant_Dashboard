@@ -2,6 +2,7 @@
 import dbConnect from "../../../../lib/db";
 import InterviewSession from "../../../../models/InterviewSession";
 import { generateAndSaveReport } from "../../../../utils/generateReport";
+import "../../../../models/JobInfo";
 import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
