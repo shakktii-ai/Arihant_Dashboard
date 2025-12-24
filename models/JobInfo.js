@@ -42,14 +42,13 @@ const JobInfoSchema = new mongoose.Schema(
     // 🔥 NEW CONTEXT FIELDS (AI quality depends on this)
     industry: {
       type: String,
-      required: true,
-      trim: true,
+      
     },
 
     companyType: {
       type: String,
       enum: ["Startup", "MNC", "PSU", "Family Business"],
-      required: true,
+     
     },
 
     location: {
@@ -61,7 +60,7 @@ const JobInfoSchema = new mongoose.Schema(
     targetMarket: {
       type: String,
       enum: ["B2B SaaS", "SME Clients", "Public Sector", "Enterprise"],
-      required: true,
+     
     },
 
     clients: {
@@ -83,10 +82,10 @@ const JobInfoSchema = new mongoose.Schema(
         type: Number,
         required: true,
       },
-      softskill: {
-        type: Number,
-        required: true,
-      },
+      // softskill: {
+      //   type: Number,
+      //   required: true,
+      // },
     },
 
     isActive: {

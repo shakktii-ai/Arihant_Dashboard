@@ -5,31 +5,34 @@ import Link from "next/link";
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const router = useRouter();
-  const [loading,setLoading]=useState(false);
+  const [loading, setLoading] = useState(false);
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-setLoading(true);
-try{
-    const res = await fetch("/api/admin/signin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", // VERY IMPORTANT for cookies
-      body: JSON.stringify(form),
-    });
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // VERY IMPORTANT for cookies
+        body: JSON.stringify(form),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      alert("Login successful!");
-      router.push("/admin");
-    } else {
-      alert(data.error || "Login failed");
-    }
-  } catch (err) {
+      if (data.ok) {
+        if (!data.company.onboardingCompleted) {
+          router.push("/admin/company/onboarding");
+        } else {
+          router.push("/admin");
+        }
+      } else {
+        alert(data.error || "Login failed");
+      }
+    } catch (err) {
       alert("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -65,13 +68,13 @@ try{
             {loading ? "Login..." : "Login"}
           </button>
           <div className="text-center mt-4">
-  <p className="text-sm text-gray-600">
-    Don’t have an account?{" "}
-    <Link href="/admin/signup"  className="text-blue-600 hover:underline">
-      SignUp
-    </Link>
-  </p>
-</div>
+            <p className="text-sm text-gray-600">
+              Don’t have an account?{" "}
+              <Link href="/admin/signup" className="text-blue-600 hover:underline">
+                SignUp
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
     </div>

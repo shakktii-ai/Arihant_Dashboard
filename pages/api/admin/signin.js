@@ -2,7 +2,7 @@ import dbConnect from "../../../lib/db";
 import Admin from "../../../models/admin";
 import bcrypt from "bcryptjs";
 import { signToken, setTokenCookie } from "../../../lib/auth";
-
+import Company from "../../../models/company";
 export default async function handler(req, res) {
   await dbConnect();
 
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     if (!match) {
       return res.status(401).json({ ok: false, message: "Invalid credentials" });
     }
-
+const company = await Company.findById(admin.companyId);
     // Create JWT payload
     const token = signToken({
       adminId: admin._id,
@@ -48,6 +48,10 @@ export default async function handler(req, res) {
       ok: true,
       message: "Login successful",
       admin: { id: admin._id, email: admin.email },
+      company: {
+        id: company._id,
+        onboardingCompleted: company.onboardingCompleted,
+      },
     });
 
   } catch (err) {

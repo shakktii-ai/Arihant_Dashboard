@@ -7,9 +7,13 @@ export default function ThankYou() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+     if (!slug) return; 
     // Redirect after 5 seconds
+    console.log("slug =", slug);
+
     const timer = setTimeout(() => {
-       router.push('/admin/mock/role');
+      router.push(`/admin/mock/role/${slug}`);
+
     }, 8000);
 
     setIsLoading(false);
@@ -42,7 +46,7 @@ export default function ThankYou() {
 <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-lg mb-8">
   <p className="text-gray-300 text-sm">
     Setting up your mock interview.
-    Redirecting in <span className="text-green-400 font-semibold">5 seconds</span>...
+    Redirecting in <span className="text-green-400 font-semibold">8 seconds</span>...
   </p>
 </div>
 

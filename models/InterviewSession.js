@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const AnswerSchema = new mongoose.Schema(
   {
-    section: String, // 'apti' | 'technical' | 'softskill'
+    section: String, // 'apti' | 'technical' 
     questionIndex: Number,
     response: mongoose.Schema.Types.Mixed,
     audioPath: String,
@@ -43,17 +43,33 @@ const InterviewSessionSchema = new mongoose.Schema(
           correctOptionIndex: Number,
         },
       ],
-      technical: [
-        {
-          prompt: String,
-          hint: String,
-        },
-      ],
-      softskill: [
-        {
-          prompt: String,
-        },
-      ],
+       technical: {
+    mcq: [
+      {
+        prompt: String,
+        options: [String],
+        correctOptionIndex: Number,
+      },
+    ],
+    written: [
+      {
+        prompt: String,
+        hint: String,
+      },
+    ],
+  },
+      // technical: [
+      //   {
+      //     prompt: String,
+      //     options: [String],
+      //     correctOptionIndex: Number,
+      //   },
+      // ],
+      // softskill: [
+      //   {
+      //     prompt: String,
+      //   },
+      // ],
     },
 
     answers: [AnswerSchema],

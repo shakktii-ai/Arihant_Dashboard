@@ -32,16 +32,12 @@ export default function AdminIndex() {
     jd: "",
     qualification: "",
     criteria: "",
-    industry: "",
-    companyType: "",
     location: "",
-    targetMarket: "",
-    clients: "", // comma-separated string
     questions: {
       totalQuestions: 60,
-      aptitude: 20,
-      technical: 25,
-      softskill: 15,
+      aptitude: 30,
+      technical: 30,
+      
     },
   });
 
@@ -120,7 +116,7 @@ export default function AdminIndex() {
       if (data.ok) {
         loadInterviews();
         setShowCreate(false);
-        alert("Created — candidate link:\n" + data.link);
+        alert("Job created successfully");
       } else {
         alert("Error creating interview");
       }
@@ -136,17 +132,15 @@ export default function AdminIndex() {
     if (!form.jd.trim()) err.jd = "Job description is required";
     if (!form.qualification.trim()) err.qualification = "Qualification is required";
     if (!form.criteria.trim()) err.criteria = "Criteria is required";
-    if (!form.industry.trim()) err.industry = "Industry is required";
-    if (!form.companyType.trim()) err.companyType = "Company type is required";
     if (!form.location.trim()) err.location = "Location is required";
-    if (!form.targetMarket.trim()) err.targetMarket = "Target market is required";
+    
 
-    const { aptitude, technical, softskill, totalQuestions } = form.questions;
+    const { aptitude, technical,  totalQuestions } = form.questions;
     if (aptitude < 1) err.aptitude = "Must be at least 1";
     if (technical < 1) err.technical = "Must be at least 1";
-    if (softskill < 1) err.softskill = "Must be at least 1";
+   
 
-    const sum = aptitude + technical + softskill;
+    const sum = aptitude + technical;
     if (sum !== totalQuestions) err.total = `Total must be ${totalQuestions}, but got ${sum}`;
     return err;
   }
@@ -506,34 +500,11 @@ export default function AdminIndex() {
                   />
                   {errors.criteria && <div className="text-xs text-red-600 mt-1">{errors.criteria}</div>}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               
 
-                  <div>
-                    <label className="text-sm font-medium">Industry</label>
-                    <input
-                      value={form.industry}
-                      onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                      className="mt-1 block w-full border rounded p-2"
-                      placeholder="Fintech, EdTech, IT Services"
-                    />
-                    {errors.industry && <p className="text-xs text-red-600">{errors.industry}</p>}
-                  </div>
+                  
 
-                  <div>
-                    <label className="text-sm font-medium">Company Type</label>
-                    <select
-                      value={form.companyType}
-                      onChange={(e) => setForm({ ...form, companyType: e.target.value })}
-                      className="mt-1 block w-full border rounded p-2"
-                    >
-                      <option value="">Select</option>
-                      <option value="Startup">Startup</option>
-                      <option value="MNC">MNC</option>
-                      <option value="PSU">PSU</option>
-                      <option value="Family Business">Family Business</option>
-                    </select>
-                    {errors.companyType && <p className="text-xs text-red-600">{errors.companyType}</p>}
-                  </div>
+                  
 
                   <div>
                     <label className="text-sm font-medium">Location</label>
@@ -546,34 +517,10 @@ export default function AdminIndex() {
                     {errors.location && <p className="text-xs text-red-600">{errors.location}</p>}
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Target Market</label>
-                    <select
-                      value={form.targetMarket}
-                      onChange={(e) => setForm({ ...form, targetMarket: e.target.value })}
-                      className="mt-1 block w-full border rounded p-2"
-                    >
-                      <option value="">Select</option>
-                      <option value="B2B SaaS">B2B SaaS</option>
-                      <option value="SME Clients">SME Clients</option>
-                      <option value="Public Sector">Public Sector</option>
-                      <option value="Enterprise">Enterprise</option>
-                    </select>
-                    {errors.targetMarket && <p className="text-xs text-red-600">{errors.targetMarket}</p>}
-                  </div>
+                 
 
-                </div>
-                <div>
-                  <label className="text-sm font-medium">
-                    Clients <span className="text-xs text-gray-500">(comma separated)</span>
-                  </label>
-                  <input
-                    value={form.clients}
-                    onChange={(e) => setForm({ ...form, clients: e.target.value })}
-                    className="mt-1 block w-full border rounded p-2"
-                    placeholder="HDFC Bank, Flipkart, Govt of Karnataka"
-                  />
-                </div>
+                
+                
 
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -587,11 +534,11 @@ export default function AdminIndex() {
                     <input type="number" value={form.questions.technical} onChange={(e) => setForm({ ...form, questions: { ...form.questions, technical: Number(e.target.value) } })} className="mt-1 block w-full border rounded p-2" />
                     {errors.technical && <div className="text-xs text-red-600 mt-1">{errors.technical}</div>}
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="text-sm font-medium">Softskill</label>
                     <input type="number" value={form.questions.softskill} onChange={(e) => setForm({ ...form, questions: { ...form.questions, softskill: Number(e.target.value) } })} className="mt-1 block w-full border rounded p-2" />
                     {errors.softskill && <div className="text-xs text-red-600 mt-1">{errors.softskill}</div>}
-                  </div>
+                  </div> */}
                 </div>
 
                 {errors.total && <div className="text-sm text-red-700">{errors.total}</div>}

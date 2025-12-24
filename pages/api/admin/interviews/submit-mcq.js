@@ -1,4 +1,4 @@
-// pages/api/interview/submit-mcq.js
+// pages/api/admin/interviews/submit-mcq.js
 import dbConnect from "../../../../lib/db";
 import InterviewSession from "../../../../models/InterviewSession";
 
@@ -9,10 +9,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Only POST allowed" });
   }
 
-  const { sessionId, answers, isComplete } = req.body;
+  const {
+    sessionId,
+    answers = [],          // MCQ
+    writtenAnswers = [],   // Written
+    section = "apti",
+    isComplete,
+  } = req.body;
 
-  if (!sessionId || !Array.isArray(answers)) {
-    return res.status(400).json({ ok: false, error: "Missing or invalid data" });
+  if (!sessionId) {
+    return res.status(400).json({ ok: false, error: "Missing sessionId" });
+  }
+
+  if (!["apti", "technical"].includes(section)) {
+    return res.status(400).json({ ok: false, error: "Invalid section" });
   }
 
   const session = await InterviewSession.findById(sessionId);
@@ -21,7 +31,6 @@ export default async function handler(req, res) {
     return res.status(404).json({ ok: false, error: "Session not found" });
   }
 
-  // Prevent adding answers to completed session
   if (session.status === "completed") {
     return res.status(400).json({
       ok: false,
@@ -29,30 +38,39 @@ export default async function handler(req, res) {
     });
   }
 
-  // ---------------------------------------------
-  // Remove previous aptitude answers if resubmit
-  // ---------------------------------------------
-  session.answers = session.answers.filter((a) => a.section !== "apti");
+  /* ===== Remove old answers of this section ===== */
+  session.answers = session.answers.filter(
+    (a) => a.section !== section
+  );
 
-  // ---------------------------------------------
-  // Store new aptitude answers
-  // ---------------------------------------------
+  /* ===== MCQ Answers ===== */
   answers.forEach((a) => {
     if (
       typeof a.questionIndex === "number" &&
       typeof a.selectedOptionIndex === "number"
     ) {
       session.answers.push({
-        section: "apti",
+        section,
         questionIndex: a.questionIndex,
         response: a.selectedOptionIndex,
       });
     }
   });
 
-  // ---------------------------------------------
-  // Mark session complete if needed
-  // ---------------------------------------------
+  /* ===== Written Answers (FIXED) ===== */
+  writtenAnswers.forEach((a) => {
+    if (
+      typeof a.questionIndex === "number" &&
+      typeof a.response === "string"
+    ) {
+      session.answers.push({
+        section,
+        questionIndex: a.questionIndex,
+        response: a.response,
+      });
+    }
+  });
+
   if (isComplete) {
     session.status = "completed";
     session.completedAt = new Date();

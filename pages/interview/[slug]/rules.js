@@ -61,7 +61,7 @@ export default function RulesPage() {
         Interview Structure
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Aptitude */}
         <div className="border rounded-xl p-4 bg-gray-50">
           <div className="text-sm font-semibold text-gray-900">
@@ -81,7 +81,7 @@ export default function RulesPage() {
             Technical Interview
           </div>
           <div className="text-xs text-gray-600 mt-1">
-            Voice-based responses
+            Multiple Choice Questions (MCQ) and Written Questions
           </div>
           <div className="mt-3 text-sm font-medium text-blue-600">
             Duration: 30 minutes
@@ -89,7 +89,7 @@ export default function RulesPage() {
         </div>
 
         {/* Soft Skills */}
-        <div className="border rounded-xl p-4 bg-gray-50">
+        {/* <div className="border rounded-xl p-4 bg-gray-50">
           <div className="text-sm font-semibold text-gray-900">
             Soft Skills Evaluation
           </div>
@@ -99,7 +99,7 @@ export default function RulesPage() {
           <div className="mt-3 text-sm font-medium text-blue-600">
             Duration: 30 minutes
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
 

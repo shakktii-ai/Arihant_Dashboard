@@ -43,11 +43,9 @@ if (req.method === "POST") {
       !body.jobRole ||
       !body.jd ||
       !body.qualification ||
-      !body.criteria ||
-      !body.industry ||
-      !body.companyType ||
-      !body.location ||
-      !body.targetMarket
+      !body.criteria || 
+      !body.location 
+      
     ) {
       return res.status(400).json({ ok: false, error: "Missing required fields" });
     }
@@ -56,8 +54,15 @@ if (req.method === "POST") {
       totalQuestions: Number(body.questions?.totalQuestions || 60),
       aptitude: Number(body.questions?.aptitude || 0),
       technical: Number(body.questions?.technical || 0),
-      softskill: Number(body.questions?.softskill || 0),
+      // softskill: Number(body.questions?.softskill || 0),
     };
+const sum = questions.aptitude + questions.technical;
+if (sum !== questions.totalQuestions) {
+  return res.status(400).json({
+    ok: false,
+    error: `Question count mismatch: aptitude + technical must equal totalQuestions (${questions.totalQuestions})`,
+  });
+}
 
     const payload = {
       companyId, // 🔐 from token
@@ -65,14 +70,8 @@ if (req.method === "POST") {
       jd: body.jd,
       qualification: body.qualification,
       criteria: body.criteria,
-
-      // 🔥 NEW CONTEXT FIELDS
-      industry: body.industry,
-      companyType: body.companyType,
       location: body.location,
-      targetMarket: body.targetMarket,
-      clients: Array.isArray(body.clients) ? body.clients : [],
-
+    
       questions,
       isActive: true,
     };

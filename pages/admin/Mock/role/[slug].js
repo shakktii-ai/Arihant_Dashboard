@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { getApiResponse } from '../../api/admin/mock/questionsFetchFormModel';
+// import { getApiResponse } from '../../../api/admin/mock/questionsFetchFormModel';
 import { IoIosArrowBack } from "react-icons/io";
 import Link from "next/link";
 import { toast, Toaster } from "react-hot-toast";
 
 export default function Role() {
   const router = useRouter();
+  const { slug } = router.query;
   const [jobRole, setJobRole] = useState("");
   const [level, setLevel] = useState("Beginner");
   const [email, setEmail] = useState("");
@@ -17,76 +18,7 @@ export default function Role() {
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
 
-  // useEffect(() => {
-  //   if (!localStorage.getItem("token")) {
-  //     router.push("/login");
-  //   } else {
-  //     const userFromStorage = JSON.parse(localStorage.getItem('user'));
-  //     if (userFromStorage) {
-  //       setUser(userFromStorage);
-  //       setEmail(userFromStorage.email || '');  // Initialize email here directly
-        
-  //       // Check if user has available interviews from local storage initially
-  //       const completedInterviews = userFromStorage.no_of_interviews_completed || 0;
-  //       const totalInterviews = userFromStorage.no_of_interviews || 1;
-        
-  //       if (completedInterviews >= totalInterviews) {
-  //         setHasAvailableInterviews(false);
-  //       } else {
-  //         setHasAvailableInterviews(true);
-  //       }
-  //     }
-  //   }
-  // }, [router]);
-
-    // Function to check if user has available interviews
-  // const checkInterviewAvailability = async () => {
-  //   setIsCheckingAvailability(true);
-  //   try {
-  //     const userFromStorage = JSON.parse(localStorage.getItem('user'));
-  //     if (!userFromStorage || !userFromStorage.email) {
-  //       toast.error("User information not found. Please login again.");
-  //       setIsCheckingAvailability(false);
-  //       return false;
-  //     }
-
-  //     // Try to get the latest stats from the API
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/admin/mock/getUserStats?email=${encodeURIComponent(userFromStorage.email)}`);
-      
-  //     if (response.ok) {
-  //       const data = await response.json();
-        
-  //       if (data.success && data.stats) {
-  //         const completedInterviews = data.stats.no_of_interviews_completed || 0;
-  //         const totalInterviews = data.stats.no_of_interviews || 1;
-          
-  //         // Update the user in localStorage with latest stats
-  //         const updatedUser = {
-  //           ...userFromStorage,
-  //           no_of_interviews: totalInterviews,
-  //           no_of_interviews_completed: completedInterviews
-  //         };
-  //         localStorage.setItem('user', JSON.stringify(updatedUser));
-          
-  //         setHasAvailableInterviews(completedInterviews < totalInterviews);
-  //         return completedInterviews < totalInterviews;
-  //       }
-  //     }
-      
-  //     // Fallback to using the data from localStorage
-  //     const completedInterviews = userFromStorage.no_of_interviews_completed || 0;
-  //     const totalInterviews = userFromStorage.no_of_interviews || 1;
-  //     setHasAvailableInterviews(completedInterviews < totalInterviews);
-  //     return completedInterviews < totalInterviews;
-      
-  //   } catch (error) {
-  //     console.error('Error checking interview availability:', error);
-  //     toast.error("Error checking interview availability. Please try again.");
-  //     return false;
-  //   } finally {
-  //     setIsCheckingAvailability(false);
-  //   }
-  // };
+  
 useEffect(() => {
   const emailFromApply = localStorage.getItem("candidateEmail");
 
@@ -98,15 +30,36 @@ useEffect(() => {
 
   setEmail(emailFromApply);
 }, []);
+useEffect(() => {
+  if (!slug) return;
+
+  const fetchJob = async () => {
+    try {
+      const res = await fetch(`/api/job-by-slug/${slug}`);
+      const data = await res.json();
+
+      if (data.ok && data.job?.jobRole) {
+        setJobRole(data.job.jobRole);
+
+        // optional fallback for later pages
+        localStorage.setItem("jobRole", data.job.jobRole);
+      } else {
+        toast.error("Invalid job link");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load job role");
+    }
+  };
+
+  fetchJob();
+}, [slug]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();  // Prevent form from submitting normally
     localStorage.removeItem("apiResponseStatus");
     
-    if (!jobRole.trim()) {
-      toast.error("Please enter a job role");
-      return;
-    }
+  
     
     // Show loading indicator
     // toast.loading("Checking interview availability...");
@@ -306,16 +259,14 @@ useEffect(() => {
         <form onSubmit={handleSubmit} className="space-y-10">
           <div>
             <h1 className="text-2xl font-normal text-center mb-2">Select Job Role</h1>
-            <input 
-              type="text" 
-              name="jobRole" 
-              id="jobRole"
-              value={jobRole}
-              onChange={(e) => setJobRole(e.target.value)}
-              className="w-full p-3 bg-black text-white border border-gray-700 rounded-lg focus:outline-none focus:border-gray-500 text-center"
-              placeholder="Type..."
-              required
-            />
+          <input 
+  type="text"
+  value={jobRole}
+  readOnly
+  className="w-full p-3 bg-gray-900 text-white border border-gray-700 rounded-lg text-center cursor-not-allowed"
+  placeholder="Loading role..."
+/>
+
           </div>
 
           <div>
@@ -345,7 +296,7 @@ useEffect(() => {
           <button 
             type="submit" 
             className="w-full bg-white text-black font-medium py-3 px-6 rounded-lg text-lg"
-            disabled={isCheckingAvailability}
+            disabled={isCheckingAvailability || !jobRole}
           >
             {isCheckingAvailability ? 'Checking...' : 'Start'}
           </button>
