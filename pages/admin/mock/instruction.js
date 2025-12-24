@@ -1,3 +1,4 @@
+// pages/admin/mock/instruction.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { IoIosArrowBack } from "react-icons/io";

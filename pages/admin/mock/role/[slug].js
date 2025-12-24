@@ -87,7 +87,7 @@ useEffect(() => {
   
     // Replace this with a fetch request to your new API
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/mock/questionsFetchFormModel`, {
+      const res = await fetch(`/api/admin/mock/questionsFetchFormModel`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -205,7 +205,7 @@ useEffect(() => {
         const data = { jobRole,email, level, questions: formattedQuestions };
   
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/mock/jobRoleAndQuestionsSave`, {
+          const res = await fetch(`/api/admin/mock/jobRoleAndQuestionsSave`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
