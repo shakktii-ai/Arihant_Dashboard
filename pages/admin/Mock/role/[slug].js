@@ -1,3 +1,4 @@
+// pages/admin/mock/role/[slug].js
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useState } from "react";

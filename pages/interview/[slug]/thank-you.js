@@ -6,19 +6,33 @@ export default function ThankYou() {
   const { slug } = router.query;
   const [isLoading, setIsLoading] = useState(true);
 
+  // useEffect(() => {
+  //    if (!slug) return; 
+  //   // Redirect after 5 seconds
+  //   console.log("slug =", slug);
+
+  //   const timer = setTimeout(() => {
+  //     router.push(`/admin/mock/role/${slug}`);
+
+  //   }, 8000);
+
+  //   setIsLoading(false);
+  //   return () => clearTimeout(timer);
+  // }, [router]);
   useEffect(() => {
-     if (!slug) return; 
-    // Redirect after 5 seconds
-    console.log("slug =", slug);
+  if (!router.isReady) return;
+  if (!slug) return;
 
-    const timer = setTimeout(() => {
-      router.push(`/admin/mock/role/${slug}`);
+  console.log("slug =", slug);
 
-    }, 8000);
+  const timer = setTimeout(() => {
+    router.push(`/admin/mock/role/${slug}`);
+  }, 8000);
 
-    setIsLoading(false);
-    return () => clearTimeout(timer);
-  }, [router]);
+  setIsLoading(false);
+  return () => clearTimeout(timer);
+}, [router.isReady, slug]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
