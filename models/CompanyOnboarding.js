@@ -27,15 +27,31 @@ const CompanyOnboardingSchema = new mongoose.Schema(
       required: true,
     },
 
-    location: {
+    registeredAddress: {
       type: String,
       required: true,
       trim: true,
     },
 
+    gstNumber: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+      validate: {
+        validator: function (v) {
+          // GST format: 22AAAAA0000A1Z5 (15 characters)
+          return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(v);
+        },
+        message: 'Invalid GST number format. Format: 22AAAAA0000A1Z5'
+      }
+    },
+
     employeeSize: {
-      type: String, // "1–20", "50–200", etc.
-      default: "",
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
     },
     hierarchyLevel: {
       type: String,
@@ -87,14 +103,27 @@ const CompanyOnboardingSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    paymentProof: {
+      type: String, // URL/Path to the screenshot
+      required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "verified", "rejected"],
+      default: "pending",
+    },
+    creditsRemaining: {
+      type: Number,
+      default: 0,
+    },
     isCompleted: {
       type: Boolean,
       default: true, // saved only after final step
     },
     isActive: {
-  type: Boolean,
-  default: true,
-},
+      type: Boolean,
+      default: true,
+    },
 
   },
   {

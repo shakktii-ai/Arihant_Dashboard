@@ -2,7 +2,7 @@ import Report from "../models/Report";
 import CompanyOnboarding from "../models/CompanyOnboarding";
 /* ================= AI CALL ================= */
 
-async function getAIReport(analysisData, job,companyOnboarding) {
+async function getAIReport(analysisData, job, companyOnboarding) {
   const url = "https://api.openai.com/v1/chat/completions";
   const headers = {
     "Content-Type": "application/json",
@@ -15,14 +15,16 @@ You are an expert interview evaluator for modern Indian workplace hiring.
 Assessment structure:
 - Aptitude (MCQ)
 - Technical (MCQ + written descriptive answers)
-You are also given deep company context to evaluate cultural and operational alignment more accurately:
-- Industry
-- Company Type (startup, MNC, PSU, etc.)
-- Office Location
-- Target Market
-- Sample Clients
+- Behavioral & Psychometric (OCEAN-based)
 
-Your task is to generate a clear, structured, and explainable evaluation of the candidate’s overall suitability for the role — technically, behaviorally, and culturally.
+You are given job and company context ONLY to understand role expectations — 
+DO NOT assume undocumented company culture.
+
+Your task is to generate a clear, structured, and explainable evaluation of the candidate’s suitability:
+- Technical
+- Behavioral
+- Personality-to-role alignment (OCEAN → JD)
+
 --------------------------------------------------
 CRITICAL COMPLETENESS DATA:
 - answeredCount: ${analysisData.answeredCount}
@@ -40,16 +42,18 @@ RETURN STRICT JSON ONLY in this structure:
     "decisionMaking": <0-10>,
     "confidence": <0-10>,
     "languageFluency": <0-10>,
-    "culturalFit": <0-10>
+    "personalityRoleFit": <0-10>
   },
   "overallScore": <0-60>,
   "personalityType": {
-    "label": "",
-    "description": ""
-  },
-  "culturalFit": {
-    "summary": "",
-    "alignment": "High" | "Moderate" | "Low"
+    "oceanProfile": {
+      "openness": "High | Medium | Low",
+      "conscientiousness": "High | Medium | Low",
+      "extraversion": "High | Medium | Low",
+      "agreeableness": "High | Medium | Low",
+      "neuroticism": "High | Medium | Low"
+    },
+    "summary": ""
   },
   "roleFit": {
     "match": "High" | "Medium" | "Low",
@@ -61,7 +65,7 @@ RETURN STRICT JSON ONLY in this structure:
     "decisionMaking": "",
     "confidence": "",
     "languageFluency": "",
-    "culturalFit": "",
+    "personalityRoleFit": "",
     "overallSummary": ""
   },
   "improvementResources": {
@@ -70,7 +74,7 @@ RETURN STRICT JSON ONLY in this structure:
     "decisionMaking": [],
     "confidence": [],
     "languageFluency": [],
-    "culturalFit": []
+    "personalityRoleFit": []
   },
   "recommendation": "Proceed" | "Borderline" | "Cannot Proceed"
 }
@@ -79,6 +83,7 @@ RETURN STRICT JSON ONLY in this structure:
 SCORING RULES:
 - Scores must be integers 0–10
 - overallScore = sum of all 6 scores (max 60)
+
 IMPORTANT:
 If completionRatio < 0.5, recommendation CANNOT be "Proceed" regardless of score.
 
@@ -86,30 +91,37 @@ Recommendation Logic:
 - overallScore ≥ 40 → "Proceed"
 - 25–39 → "Borderline"
 - < 25 → "Cannot Proceed"
---------------------------------------------------
-SECTION RULES:
-- technicalProficiency → technical MCQ + written answers
-- communication/confidence/languageFluency → inferred from written answers
-- decisionMaking → aptitude accuracy + reasoning
-- culturalFit → overall behavior & reasoning
-Evaluation Rules:
-- Align evaluation strictly to:
-  - Job Role
-  - Job Description
-  - Qualification
-  - Experience Level
-  - Industry expectations (e.g., fintech = compliance, IT = clarity)
-  - Company type and working style (startup = fast, MNC = structured, PSU = process-heavy)
-  - Location (e.g., Tier 2 cities may expect multitasking, metros expect speed)
-  - Target market (enterprise, public sector, SME, consumer)
-  - Client behavior expectations (e.g., HDFC = structure, Flipkart = agility)
 
-- Judge technical depth relative to experience (entry / mid / senior)
-- Infer personality type from psychometric + behavioral patterns (non-clinical)
-- Cultural fit must reflect Indian workplace realities:  
-  hierarchy, jugaad, ownership, manager style, deadline pressures
-- If information is missing or weak, assign a lower score and explain why
-- Be factual, professional, and hiring-focused
+--------------------------------------------------
+EVALUATION RULES:
+
+- technicalProficiency → technical MCQs + written answers
+- decisionMaking → aptitude accuracy + reasoning quality
+- communication / confidence / languageFluency → inferred from written responses
+- personalityRoleFit → inferred using OCEAN traits mapped to JD needs
+
+Personality Evaluation (NON-clinical):
+- Openness → adaptability, learning, problem-solving
+- Conscientiousness → ownership, reliability, execution
+- Extraversion → stakeholder interaction, assertiveness
+- Agreeableness → teamwork, conflict handling
+- Neuroticism → stress tolerance, ambiguity handling
+
+ROLE FIT MUST BE BASED ON:
+- Job Role & JD expectations
+- Experience level (entry / mid / senior)
+- Industry norms (e.g., fintech = compliance focus, IT = clarity)
+- Target market (enterprise, SME, public sector, consumer)
+- Client expectations (e.g., HDFC = structured, Flipkart = fast-paced)
+
+DO NOT:
+- Assume undocumented company culture
+- Penalize for missing data — instead lower score and explain
+
+Indian workplace context to consider:
+- deadlines, hierarchy awareness, ownership mindset
+- ambiguity, pressure, cross-functional coordination
+
 --------------------------------------------------
 JOB CONTEXT:
 - Role: ${job.jobRole}
@@ -167,17 +179,17 @@ export async function generateAndSaveReport(session, candidate) {
   try {
     const job = session.jobInfo;
     if (!job) throw new Error("Job context missing");
-   const companyOnboarding = await CompanyOnboarding.findOne({
-  companyId: session.companyId,
-  $or: [
-    { isCompleted: true }, // old onboarding records
-    { isActive: true },    // new onboarding records
-  ],
-}).lean();
+    const companyOnboarding = await CompanyOnboarding.findOne({
+      companyId: session.companyId,
+      $or: [
+        { isCompleted: true }, // old onboarding records
+        { isActive: true },    // new onboarding records
+      ],
+    }).lean();
 
-if (!companyOnboarding) {
-  throw new Error("Company onboarding data missing");
-}
+    if (!companyOnboarding) {
+      throw new Error("Company onboarding data missing");
+    }
     const analysisData = {
       jobRole: job.jobRole,
       criteria: job.criteria,
@@ -218,7 +230,7 @@ if (!companyOnboarding) {
         if (typeof ans.response === "number") {
           q =
             session.generatedQuestions.technical.mcq?.[
-              ans.questionIndex
+            ans.questionIndex
             ];
           answerText = q?.options?.[ans.response] || "(no answer)";
         }
@@ -227,7 +239,7 @@ if (!companyOnboarding) {
         if (typeof ans.response === "string") {
           q =
             session.generatedQuestions.technical.written?.[
-              ans.questionIndex
+            ans.questionIndex
             ];
           answerText = ans.response;
         }
@@ -240,7 +252,7 @@ if (!companyOnboarding) {
     }
 
     /* ========= AI REPORT ========= */
-    const report = await getAIReport(analysisData, job,companyOnboarding);
+    const report = await getAIReport(analysisData, job, companyOnboarding);
     if (!report) throw new Error("AI report generation failed");
 
     /* ========= SAVE REPORT ========= */

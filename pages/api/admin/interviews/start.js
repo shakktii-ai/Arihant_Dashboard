@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   try {
     /* 1️⃣ FIND JOB */
-    
+
 
     const job = await JobInfo.findOne({ slug, isActive: true });
     if (!job) {
@@ -38,16 +38,32 @@ export default async function handler(req, res) {
     const companyOnboarding = await CompanyOnboarding.findOne({
       companyId: job.companyId,
       $or: [
-    { isCompleted: true }, // ✅ old records
-    { isActive: true },    // ✅ new records
-  ],
+        { isCompleted: true }, // ✅ old records
+        { isActive: true },    // ✅ new records
+      ],
     });
 
     if (!companyOnboarding) {
       throw new Error("Company onboarding data not found");
     }
 
-    /* 2️⃣ CREATE EMPTY SESSION */
+    /* 2️⃣ CHECK ATTEMPT LIMIT (5 attempts per email per job) */
+    const existingAttempts = await InterviewSession.countDocuments({
+      "candidate.email": candidate.email,
+      jobInfo: job._id,
+    });
+
+    const MAX_ATTEMPTS = 1;
+    if (existingAttempts >= MAX_ATTEMPTS) {
+      return res.status(403).json({
+        ok: false,
+        detail: `You have reached the maximum limit of ${MAX_ATTEMPTS} attempts for this interview. Please contact the recruiter if you need assistance.`,
+        attemptsUsed: existingAttempts,
+        maxAttempts: MAX_ATTEMPTS,
+      });
+    }
+
+    /* 3️⃣ CREATE EMPTY SESSION */
     const session = await InterviewSession.create({
       companyId: job.companyId,
       jobInfo: job._id,
@@ -128,9 +144,10 @@ async function generateAptitude(job, companyOnboarding) {
     Math.ceil(job.questions.totalQuestions * 0.33);
 
   const prompt = `You are an interview question generator designed to simulate realistic hiring assessments for Indian workplace contexts.
-Generate ${aptiCount} aptitude questions.
-You must output ONLY valid JSON in the following exact structure:
-Return ONLY valid JSON:
+
+Generate ${aptiCount} assessment questions in JSON format.
+
+Return ONLY valid JSON in this structure:
 {
   "aptitude": [
     {
@@ -144,29 +161,32 @@ Return ONLY valid JSON:
 
 Context:
 
-- Criteria (Experience + Level): ${job.criteria}  ← e.g., "3–5 years, mid-level"
-- Industry: ${companyOnboarding.industry} ← e.g., Fintech, IT Services, EdTech
-- Company Type: ${companyOnboarding.companyType} ← e.g., startup, MNC, PSU, family business
-- Location: ${job.location} ← e.g., Bangalore, Tier 2 city
-- Target Market: ${companyOnboarding.targetMarket} ← e.g., B2B SaaS, public sector, SME clients
-- Sample Clients: ${companyOnboarding.sampleClients} ← e.g., ["HDFC", "Flipkart", "Indian Railways"]
+- Criteria (Experience + Level): ${job.criteria}
+- Industry: ${companyOnboarding.industry}
+- Company Type: ${companyOnboarding.companyType}
+- Location: ${job.location}
+- Target Market: ${companyOnboarding.targetMarket}
+- Sample Clients: ${companyOnboarding.sampleClients}
 
-#### Assessment (Merged Aptitude + Psychometric):
-- Each item must include:
-  - "prompt": the question text
-  - "options": 4 choices
-  - "correctOptionIndex": integer from 0–3
-  - "type": one of:
-    - "numerical" → salary math, budget estimation, KM–INR conversion
-    - "logical" → pattern, deduction, conditionals
-    - "personality" → no correct answer; tests preferences or traits
-    - "attitude" → judgment, ethics, time pressure, dealing with failure or conflict
-- Questions must reflect **India-based work situations**, adjusted by:
+Assessment Design:
+
+- Questions must reflect India-based work scenarios, adjusted for:
   - Experience level
-  - Industry and client type
-  - Region/city and local workplace behaviors
-- Use culturally accurate names, places, and examples:
-  - ₹5,000 bonus, Swiggy launch, train delay, Diwali deadline, Noida office
+  - Industry norms
+  - Regional workplace behaviors
+
+- Question Types:
+  - "numerical" → e.g. estimating salary hikes, converting ₹ to USD, budget planning
+  - "logical" → patterns, conditional decisions, prioritizing tasks
+  - "personality" → no correct answer; map to OCEAN traits (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism)
+  - "attitude" → work ethics, stress handling, integrity, response to setbacks
+
+- For personality questions:
+  - Use OCEAN trait indicators and realistic workplace settings
+  - Ensure cultural relevance (e.g. Swiggy delivery issue, Diwali deadlines, team meeting in Gurgaon)
+  - Later use responses to check JD–personality fit (e.g., High Conscientiousness for project manager roles)
+
+Output only valid JSON.
 `;
 
   const raw = await callOpenAI(prompt);

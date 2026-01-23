@@ -74,6 +74,8 @@ export default function ApplyPage() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [jobInfo, setJobInfo] = useState(null);
+  const [attemptInfo, setAttemptInfo] = useState(null);
+  const [checkingAttempts, setCheckingAttempts] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -84,10 +86,40 @@ export default function ApplyPage() {
           const j = await res.json();
           if (j.ok) setJobInfo(j.job);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchJob();
   }, [slug]);
+
+  // Check attempts when email changes
+  useEffect(() => {
+    const checkAttempts = async () => {
+      if (!slug || !form.email || !/^\S+@\S+\.\S+$/.test(form.email)) {
+        setAttemptInfo(null);
+        return;
+      }
+
+      setCheckingAttempts(true);
+      try {
+        const res = await fetch("/api/check-attempts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, slug }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setAttemptInfo(data);
+        }
+      } catch (e) {
+        console.error("Error checking attempts:", e);
+      } finally {
+        setCheckingAttempts(false);
+      }
+    };
+
+    const timeoutId = setTimeout(checkAttempts, 500); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [form.email, slug]);
 
   // ------------------------------
   // VALIDATION FUNCTION
@@ -143,21 +175,21 @@ export default function ApplyPage() {
   //     alert("Error starting interview: " + (data.detail || "unknown"));
   //   }
   // }
-async function handleSubmit(e) {
-  e.preventDefault();
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-  const v = validate();
-  if (Object.keys(v).length > 0) {
-    setErrors(v);
-    return;
+    const v = validate();
+    if (Object.keys(v).length > 0) {
+      setErrors(v);
+      return;
+    }
+
+    // store candidate temporarily
+    localStorage.setItem("candidateForm", JSON.stringify(form));
+
+    // go to rules page
+    router.push(`/interview/${slug}/rules`);
   }
-
-  // store candidate temporarily
-  localStorage.setItem("candidateForm", JSON.stringify(form));
-
-  // go to rules page
-  router.push(`/interview/${slug}/rules`);
-}
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
@@ -205,6 +237,22 @@ async function handleSubmit(e) {
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">{errors.email}</p>
             )}
+
+            {/* Attempt Information */}
+            {checkingAttempts && (
+              <p className="text-gray-500 text-sm mt-2">Checking attempts...</p>
+            )}
+
+            {attemptInfo && !checkingAttempts && attemptInfo.remainingAttempts === 0 && (
+              <div className="mt-2 p-3 rounded-lg border bg-red-50 border-red-200">
+                <p className="text-sm font-medium text-red-700">
+                  ⚠️ No attempts remaining
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  You have already reached the maximum limit for this interview.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* PHONE */}
@@ -224,11 +272,17 @@ async function handleSubmit(e) {
           {/* BUTTON */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (attemptInfo && attemptInfo.remainingAttempts === 0)}
             className={`w-full py-3 text-white rounded-lg font-semibold shadow 
-              ${loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+              ${loading || (attemptInfo && attemptInfo.remainingAttempts === 0)
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"}`}
           >
-            {loading ? "Next" : "Next"}
+            {loading
+              ? "Processing..."
+              : attemptInfo && attemptInfo.remainingAttempts === 0
+                ? "Maximum Attempts Reached"
+                : "Next"}
           </button>
         </form>
       </div>
