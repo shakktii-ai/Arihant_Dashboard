@@ -125,7 +125,6 @@ export default function AdminIndex() {
     }
   }
 
-
   async function loadInterviews() {
     console.log("typeof fetch =", typeof fetch);
     console.log("fetch value =", fetch);
