@@ -1,5 +1,16 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import {
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  FileText,
+  Video,
+  Brain,
+} from "lucide-react";
+import { IoIosArrowBack } from "react-icons/io";
 
 export default function RulesPage() {
   const router = useRouter();
@@ -7,6 +18,7 @@ export default function RulesPage() {
 
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("candidateForm");
@@ -18,15 +30,17 @@ export default function RulesPage() {
   }, [slug]);
 
   async function startInterview() {
+    if (!agreedToTerms) {
+      alert("Please confirm instructions before starting.");
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch("/api/admin/interviews/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug,
-        candidate
-      }),
+      body: JSON.stringify({ slug, candidate }),
     });
 
     const data = await res.json();
@@ -42,127 +56,169 @@ export default function RulesPage() {
   }
 
   return (
-<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4 py-8">
-  <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
+        <button
+      onClick={() => router.back()}
+      className="absolute top-6 left-6 text-gray-400 text-2xl transition"
+    >
+      <IoIosArrowBack />
+    </button>
+      <div className="max-w-4xl mx-auto">
 
-    {/* Header */}
-    <div className="text-center mb-8">
-      <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
-        Interview Instructions
-      </h1>
-      <p className="mt-2 text-sm sm:text-base text-gray-600">
-        Please review the following guidelines carefully before starting your interview.
-      </p>
-    </div>
+        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
 
-    {/* Interview Structure */}
-    <div className="mb-8">
-      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-        Interview Structure
-      </h2>
+          {/* HEADER */}
+          <div className="text-center mb-10">
+           
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Aptitude */}
-        <div className="border rounded-xl p-4 bg-gray-50">
-          <div className="text-sm font-semibold text-gray-900">
-            Aptitude Assessment
+            <h1 className="text-3xl font-semibold text-slate-800 mb-3">
+              Assessment Instructions
+            </h1>
+
+            <p className="text-slate-600">
+              Please review the following guidelines carefully before starting your assessment.
+            </p>
           </div>
-          <div className="text-xs text-gray-600 mt-1">
-            Multiple Choice Questions (MCQ)
+
+          {/* ================= STAGES ================= */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-slate-800 mb-6">
+              Assessment Stages
+            </h2>
+
+            {/* ===== STAGE 1 ===== */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-700">
+                  Stage 1: Assessment
+                </h3>
+              
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+
+                {/* Aptitude */}
+                <div className="border rounded-xl p-5 hover:border-teal-300 hover:shadow-md transition">
+                  <div className="flex gap-3 mb-3">
+                    <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800">Aptitude Test</h4>
+                      <p className="text-sm text-slate-600">Multiple Choice Questions (MCQ)</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-teal-600 text-sm font-medium">
+                    <Clock className="w-4 h-4" />
+                    Duration: 5 minutes
+                  </div>
+                </div>
+
+                {/* Technical */}
+                <div className="border rounded-xl p-5 hover:border-teal-300 hover:shadow-md transition">
+                  <div className="flex gap-3 mb-3">
+                    <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800">Technical Test</h4>
+                      <p className="text-sm text-slate-600">MCQ + Written Questions</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-teal-600 text-sm font-medium">
+                    <Clock className="w-4 h-4" />
+                    Duration: 30 minutes
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ===== STAGE 2 ===== */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-700">
+                  Stage 2: Interview
+                </h3>
+               
+              </div>
+
+              <div className="border rounded-xl p-5 hover:border-teal-300 hover:shadow-md transition">
+                <div className="flex gap-3 mb-3">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <Video className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-800">AI-Based Interview</h4>
+                    <p className="text-sm text-slate-600">
+                      Answer 11 structured interview questions
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-teal-600 text-sm font-medium">
+                  <Clock className="w-4 h-4" />
+                  Duration: ~15–20 minutes
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-3 text-sm font-medium text-blue-600">
-            Duration: 5 minutes
+
+          {/* ================= GUIDELINES ================= */}
+          <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-xl p-6 mb-8">
+            <div className="flex gap-3 mb-4">
+              <AlertCircle className="w-5 h-5 text-teal-600 mt-1" />
+              <h3 className="font-semibold text-slate-800">Important Guidelines</h3>
+            </div>
+
+            <ul className="space-y-4 text-sm text-slate-700">
+              <li>• Both stages (Assessment and Interview) are mandatory.</li>
+              <li>• Do not switch tabs or leave the screen during the test.</li>
+              <li>• Ensure stable internet and quiet environment.</li>
+              <li>• Each section is time-limited and auto-submits.</li>
+              <li>• Refreshing/closing may lead to submission.</li>
+              <li>• Entire test auto-submits after completion.</li>
+            </ul>
+          </div>
+
+          {/* ================= CHECKBOX ================= */}
+          <div className="mb-8">
+            <label className="flex gap-3 p-4 border rounded-lg cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1"
+              />
+              <span className="text-sm text-slate-700">
+                I have read and understood all instructions.
+              </span>
+            </label>
+          </div>
+
+          {/* ================= BUTTON ================= */}
+          <div className="flex justify-end">
+            <button
+              onClick={startInterview}
+              disabled={!agreedToTerms || loading}
+              className={`flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition
+              ${
+                agreedToTerms
+                  ? "bg-teal-600 text-white hover:bg-teal-700"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {loading ? "Starting..." : "Start Assessment"}
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Technical */}
-        <div className="border rounded-xl p-4 bg-gray-50">
-          <div className="text-sm font-semibold text-gray-900">
-            Technical Interview
-          </div>
-          <div className="text-xs text-gray-600 mt-1">
-            Multiple Choice Questions (MCQ) and Written Questions
-          </div>
-          <div className="mt-3 text-sm font-medium text-blue-600">
-            Duration: 30 minutes
-          </div>
-        </div>
+        
+      
 
-        {/* Soft Skills */}
-        {/* <div className="border rounded-xl p-4 bg-gray-50">
-          <div className="text-sm font-semibold text-gray-900">
-            Soft Skills Evaluation
-          </div>
-          <div className="text-xs text-gray-600 mt-1">
-            Voice-based responses
-          </div>
-          <div className="mt-3 text-sm font-medium text-blue-600">
-            Duration: 30 minutes
-          </div>
-        </div> */}
       </div>
     </div>
-
-    {/* Instructions */}
-    <div className="space-y-5 mb-8">
-      <div className="flex gap-3">
-        <span className="mt-2 h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
-        <p className="text-sm sm:text-base text-gray-700">
-          Once the interview begins, switching browser tabs, opening new windows,
-          or navigating away from the interview screen is not permitted and may be recorded.
-        </p>
-      </div>
-
-      <div className="flex gap-3">
-        <span className="mt-2 h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
-        <p className="text-sm sm:text-base text-gray-700">
-          Ensure you have a stable internet connection and are seated in a quiet
-          environment before starting the interview.
-        </p>
-      </div>
-
-      <div className="flex gap-3">
-        <span className="mt-2 h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
-        <p className="text-sm sm:text-base text-gray-700">
-          Each section is time-limited. When the allotted time expires,
-          the system will automatically proceed to the next section.
-        </p>
-      </div>
-
-      <div className="flex gap-3">
-        <span className="mt-2 h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
-        <p className="text-sm sm:text-base text-gray-700">
-          Refreshing or closing the browser after the interview has started
-          may result in automatic submission of your responses.
-        </p>
-      </div>
-
-      <div className="flex gap-3">
-        <span className="mt-2 h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
-        <p className="text-sm sm:text-base text-gray-700">
-          The interview will be automatically submitted once the total
-          interview duration is completed.
-        </p>
-      </div>
-    </div>
-
-    {/* Start Button */}
-    <div className="flex justify-center">
-      <button
-        onClick={startInterview}
-        disabled={loading}
-        className={`w-full sm:w-auto px-10 py-3 rounded-lg font-medium text-white transition
-          ${loading
-            ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98]"
-          }`}
-      >
-        {loading ? "Starting Interview..." : "Start Interview"}
-      </button>
-    </div>
-
-  </div>
-</div>
-
   );
 }

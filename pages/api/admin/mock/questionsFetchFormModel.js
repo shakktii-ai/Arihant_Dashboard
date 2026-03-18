@@ -232,15 +232,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { jobRole, level } = req.body;
+  const { jobRole } = req.body;
 
-  if (!jobRole || !level) {
-    return res.status(400).json({ error: 'Job role and level are required.' });
+  if (!jobRole) {
+    return res.status(400).json({ error: 'Job role are required.' });
   }
 
   try {
-    console.log(`Processing request for job role: ${jobRole}, level: ${level}`);
-    const questions = await getChatGPTResponse(jobRole, level);
+    console.log(`Processing request for job role: ${jobRole}`);
+    const questions = await getChatGPTResponse(jobRole);
 
     if (questions) {
       // Log success but don't log the actual questions (could be large)
@@ -259,7 +259,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function getChatGPTResponse(jobRole, level) {
+async function getChatGPTResponse(jobRole) {//level
   const url = 'https://api.openai.com/v1/chat/completions';
   
   // Get API key from environment variables
@@ -275,7 +275,12 @@ async function getChatGPTResponse(jobRole, level) {
     'Authorization': `Bearer ${apiKey}`
   };
 
-  const prompt = `Generate 10 interview questions for a ${jobRole} position at ${level} level. Format the questions as a numbered list (1., 2., etc.) with each question on a new line.`;
+  const prompt = `Generate 10 interview questions for a ${jobRole} position. Format the questions as a numbered list (1., 2., etc.) with each question on a new line.
+  Difficulty:
+- 3 easy
+- 4 medium
+- 3 hard
+  `;
 
   const payload = {
     model: 'gpt-4', // Using gpt-4 for better structured responses
@@ -290,7 +295,7 @@ async function getChatGPTResponse(jobRole, level) {
   };
 
   try {
-    console.log(`Fetching questions for ${jobRole} at ${level} level...`);
+    console.log(`Fetching questions for ${jobRole} ...`);
     
     const response = await fetch(url, {
       method: 'POST',

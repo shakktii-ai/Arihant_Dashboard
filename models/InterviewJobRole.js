@@ -7,10 +7,10 @@ const InterviewJobRoleSchema = new mongoose.Schema({
     required: true,
   },
  
-  level: {
-    type: String,
-    required: true,
-  },
+  // level: {
+  //   type: String,
+  //   required: true,
+  // },
   questions: [
     {
       questionText: {

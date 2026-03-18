@@ -14,7 +14,7 @@ export default function Role() {
       ? localStorage.getItem("currentJobSlug")
       : null);
   const [jobRole, setJobRole] = useState("");
-  const [level, setLevel] = useState("Beginner");
+  // const [level, setLevel] = useState("Beginner");
   const [email, setEmail] = useState("");
   const [questions, setQuestions] = useState("");
   const [user, setUser] = useState(null);
@@ -83,7 +83,7 @@ useEffect(() => {
     // Declare formattedQuestions here once
     let formattedQuestions = [];
     
-    router.push("/admin/mock/instruction");
+    router.push("/mockInterview/instruction");
   
     // Replace this with a fetch request to your new API
     try {
@@ -95,7 +95,7 @@ useEffect(() => {
         body: JSON.stringify({
           jobRole,
           email,
-          level,
+          // level,
         }),
       });
   
@@ -202,7 +202,7 @@ useEffect(() => {
       console.log("Questions to be sent:", formattedQuestions);
   
       if (formattedQuestions && formattedQuestions.length > 0) {
-        const data = { jobRole,email, level, questions: formattedQuestions };
+        const data = { jobRole,email, questions: formattedQuestions };//level
   
         try {
           const res = await fetch(`/api/admin/mock/jobRoleAndQuestionsSave`, {
@@ -249,102 +249,99 @@ useEffect(() => {
     }
   };
   
-  return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-      
-      <Link href="/dashboard" className="block mb-12">
-        <div className="text-white text-2xl w-8 h-8 flex items-center justify-center">
-          <IoIosArrowBack />
-        </div>
-      </Link>
-      
-      <div className="max-w-md mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-10">
-          <div>
-            <h1 className="text-2xl font-normal text-center mb-2">Select Job Role</h1>
-          <input 
-  type="text"
-  value={jobRole}
-  readOnly
-  className="w-full p-3 bg-gray-900 text-white border border-gray-700 rounded-lg text-center cursor-not-allowed"
-  placeholder="Loading role..."
-/>
+ return (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-950 text-white px-6 py-10">
+    <Toaster position="top-center" />
 
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-normal text-center mb-6">Select Level</h2>
-            <div className="space-y-4">
-              {['Beginner', 'Intermediate', 'Advanced', 'Expert'].map((lvl) => (
-                <label 
-                  key={lvl} 
-                  className={`flex items-center p-4 border rounded-lg cursor-pointer ${
-                    level === lvl ? 'border-white' : 'border-gray-700'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="level"
-                    value={lvl}
-                    checked={level === lvl}
-                    onChange={() => setLevel(lvl)}
-                    className="h-5 w-5"
-                  />
-                  <span className="ml-3 text-lg">{lvl}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            className="w-full bg-white text-black font-medium py-3 px-6 rounded-lg text-lg"
-            disabled={isCheckingAvailability || !jobRole}
-          >
-            {isCheckingAvailability ? 'Checking...' : 'Start'}
-          </button>
-        </form>
-        
-        {/* Hidden email input */}
-        <input 
-          type="email" 
-          name="email" 
-          value={email} 
-          readOnly 
-          className="hidden"
-        />
+    {/* BACK */}
+    {/* <Link href="/" className="absolute top-6 left-6">
+      <div className="text-gray-400 hover:text-white text-2xl transition">
+        <IoIosArrowBack />
       </div>
+    </Link> */}
+
+    {/* MAIN CARD */}
+    <div className="max-w-xl mx-auto mt-20 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
+
+      {/* HEADER */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-semibold mb-2">
+          Ready for Your Interview
+        </h1>
+        <p className="text-gray-400 text-sm">
+          Please confirm your role before starting
+        </p>
+      </div>
+
+      {/* PROGRESS FLOW */}
+      {/* <div className="flex items-center justify-center gap-3 mb-10 text-sm">
+        <span className="text-green-400 font-medium">Assessment ✓</span>
+        <span className="text-gray-500">→</span>
+        <span className="text-blue-400 font-medium">Interview (Current)</span>
+        <span className="text-gray-500">→</span>
+        <span className="text-gray-500">Report</span>
+      </div> */}
+
+      {/* ROLE CARD */}
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 mb-8 text-center">
+        <p className="text-sm text-gray-400 mb-2">Selected Role</p>
+        <p className="text-2xl font-semibold text-white tracking-wide">
+          {jobRole || "Loading..."}
+        </p>
+      </div>
+
+     
       
-      {/* No interviews available modal */}
-      {showErrorModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-70">
-          <div className="bg-gray-800 p-6 rounded-xl max-w-md border border-red-500 shadow-2xl">
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-red-500 rounded-full mx-auto flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold mb-2 text-white">No Available Interviews</h2>
-              <p className="text-gray-300 mb-4">You have used all your available interviews. Please contact the administrator to request more interviews.</p>
-              <div className="flex justify-center space-x-4">
-                <Link href="/profile">
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all duration-200">
-                    View Profile
-                  </button>
-                </Link>
-                <button 
-                  onClick={() => setShowErrorModal(false)}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-all duration-200"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+
+      {/* START BUTTON */}
+      <button
+        type="submit"
+        onClick={handleSubmit}
+        disabled={isCheckingAvailability || !jobRole}
+        className={`w-full py-3 rounded-lg text-lg font-medium transition-all shadow-lg
+        ${
+          isCheckingAvailability
+            ? "bg-gray-600 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+        }`}
+      >
+        {isCheckingAvailability ? "Preparing..." : "Start Interview"}
+      </button>
+
+      {/* FOOTER NOTE */}
+      <p className="text-center text-xs text-gray-500 mt-6">
+        Make sure your camera & microphone are ready
+      </p>
+    </div>
+
+    {/* ERROR MODAL (improved) */}
+    {showErrorModal && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+        <div className="bg-slate-900 border border-red-500/30 p-6 rounded-xl max-w-md text-center shadow-2xl">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold mb-2">
+            No Interviews Left
+          </h2>
+          <p className="text-gray-400 mb-6 text-sm">
+            You’ve used all available interview attempts.
+          </p>
+
+          <div className="flex justify-center gap-3">
+            <Link href="/profile">
+              <button className="bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700">
+                View Profile
+              </button>
+            </Link>
+            <button
+              onClick={() => setShowErrorModal(false)}
+              className="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600"
+            >
+              Close
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }

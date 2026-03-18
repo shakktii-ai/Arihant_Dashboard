@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     await connectDb(); // Ensure we're connected to the database
 
     if (req.method === 'POST') {
-      const { jobRole,email, level, questions } = req.body;
+      const { jobRole,email, questions } = req.body;//level
 
       // Validate the data before saving
       if (!jobRole ||!email || !Array.isArray(questions) || questions.length === 0) {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       const newInterviewJobRole = new JobRole({
         role: jobRole,
       email,
-        level,
+        // level,
         questions: formattedQuestions,
       });
 

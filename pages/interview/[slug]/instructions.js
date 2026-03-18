@@ -1,14 +1,14 @@
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState,useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 export default function InstructionsPage() {
   const router = useRouter();
   const { sessionId, slug } = router.query;
-useEffect(() => {
-  if (slug) {
-    localStorage.setItem("currentJobSlug", slug);
-  }
-}, [slug]);
+  useEffect(() => {
+    if (slug) {
+      localStorage.setItem("currentJobSlug", slug);
+    }
+  }, [slug]);
 
   /* ================= STATE ================= */
   const [session, setSession] = useState(null);
@@ -25,7 +25,7 @@ useEffect(() => {
 
   const [tabViolations, setTabViolations] = useState(null);
   const [tabWarning, setTabWarning] = useState(false);
-
+const [submitting, setSubmitting] = useState(false);
   /* ================= BUTTON STYLE ================= */
   const primaryBtn =
     "px-6 py-2 rounded-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition";
@@ -38,10 +38,10 @@ useEffect(() => {
     }),
     []
   );
-const autoSubmitted = useRef({
-  aptitude: false,
-  technical: false,
-});
+  const autoSubmitted = useRef({
+    aptitude: false,
+    technical: false,
+  });
 
   const [sectionStartedAt, setSectionStartedAt] = useState({
     aptitude: null,
@@ -61,12 +61,12 @@ const autoSubmitted = useRef({
     aptiArray.length > 0 &&
     technicalMcq.length > 0 &&
     technicalWritten.length > 0;
- useEffect(() => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}, [activeTab]);
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [activeTab]);
 
   /* ================= POLLING ================= */
   useEffect(() => {
@@ -203,37 +203,37 @@ const autoSubmitted = useRef({
   }, []);
 
   useEffect(() => {
-  if (timeLeft > 0) return;
+    if (timeLeft > 0) return;
 
-  const start = sectionStartedAt[activeTab];
-  if (!start) return;
+    const start = sectionStartedAt[activeTab];
+    if (!start) return;
 
-  if (
-    activeTab === "aptitude" &&
-    !aptiCompleted &&
-    !autoSubmitted.current.aptitude
-  ) {
-    autoSubmitted.current.aptitude = true;
-    submitMCQ();
-  }
+    if (
+      activeTab === "aptitude" &&
+      !aptiCompleted &&
+      !autoSubmitted.current.aptitude
+    ) {
+      autoSubmitted.current.aptitude = true;
+      submitMCQ();
+    }
 
-  if (
-    activeTab === "technical" &&
-    !techCompleted &&
-    !autoSubmitted.current.technical
-  ) {
-    autoSubmitted.current.technical = true;
-    submitTechnical();
-  }
-}, [timeLeft, activeTab, aptiCompleted, techCompleted, sectionStartedAt]);
+    if (
+      activeTab === "technical" &&
+      !techCompleted &&
+      !autoSubmitted.current.technical
+    ) {
+      autoSubmitted.current.technical = true;
+      submitTechnical();
+    }
+  }, [timeLeft, activeTab, aptiCompleted, techCompleted, sectionStartedAt]);
 
   /* ================= HELPERS ================= */
- const formatTime = (s) => {
-  if (s === null) return "--:--";
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(
-    s % 60
-  ).padStart(2, "0")}`;
-};
+  const formatTime = (s) => {
+    if (s === null) return "--:--";
+    return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(
+      s % 60
+    ).padStart(2, "0")}`;
+  };
 
 
   /* ================= SUBMITS ================= */
@@ -255,57 +255,82 @@ const autoSubmitted = useRef({
     setAptiCompleted(true);
     setActiveTab("technical");
     setSectionStartedAt((s) => ({ ...s, technical: Date.now() }));
-setTimeLeft(SECTION_TIMERS.technical); // ✅ IMPORTANT
+    setTimeLeft(SECTION_TIMERS.technical); // ✅ IMPORTANT
   }
 
   async function submitTechnical() {
-  await fetch("/api/admin/interviews/submit-mcq", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId,
-      section: "technical",
-      isComplete: true,
-
-      // ✅ MCQ answers (unchanged)
-      answers: Object.entries(techAnswers).map(([k, v]) => ({
-        questionIndex: Number(k),
-        selectedOptionIndex: v,
-      })),
-
-      // ✅ WRITTEN answers (THIS WAS MISSING)
-      writtenAnswers: Object.entries(techWrittenAnswers).map(([k, v]) => ({
-        questionIndex: Number(k),
-        response: v, // 🔴 MUST be "response"
-      })),
-    }),
-  });
-
-  setTechCompleted(true);
-  finishInterview();
-}
-
-  async function finishInterview() {
-    localStorage.removeItem(`assessment_${sessionId}`);
-    await fetch("/api/admin/interviews/finish", {
+     if (submitting) return;
+  setSubmitting(true);
+    await fetch("/api/admin/interviews/submit-mcq", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({
+        sessionId,
+        section: "technical",
+        isComplete: true,
+
+        // ✅ MCQ answers (unchanged)
+        answers: Object.entries(techAnswers).map(([k, v]) => ({
+          questionIndex: Number(k),
+          selectedOptionIndex: v,
+        })),
+
+        // ✅ WRITTEN answers (THIS WAS MISSING)
+        writtenAnswers: Object.entries(techWrittenAnswers).map(([k, v]) => ({
+          questionIndex: Number(k),
+          response: v, // 🔴 MUST be "response"
+        })),
+      }),
     });
-   const safeSlug =
-  slug || localStorage.getItem("currentJobSlug");
 
-router.push(`/interview/${safeSlug}/thank-you`);
-
+    setTechCompleted(true);
+    finishInterview();
   }
 
+  // async function finishInterview() {
+  //   localStorage.removeItem(`assessment_${sessionId}`);
+  //   await fetch("/api/admin/interviews/finish", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ sessionId }),
+  //   });
+  //   const safeSlug =
+  //     slug || localStorage.getItem("currentJobSlug");
+
+  //   router.push(`/interview/${safeSlug}/thank-you`);
+
+  // }
+async function finishInterview() {
+  localStorage.removeItem(`assessment_${sessionId}`);
+
+  const safeSlug =
+    slug || localStorage.getItem("currentJobSlug");
+ if (!safeSlug) {
+    console.error("Slug missing");
+    return;
+  }
+  router.push(
+    `/interview/${safeSlug}/generating?sessionId=${sessionId}`
+  );
+}
   /* ================= UI ================= */
   if (!session)
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
 
   if (!questionsReady)
     return <div className="min-h-screen flex items-center justify-center">Preparing questions…</div>;
+  const isMcqAttempted =
+    Object.keys(techAnswers).length === technicalMcq.length;
 
+  const writtenAttemptCount = Object.values(techWrittenAnswers).filter(
+    (ans) => ans && ans.trim() !== ""
+  ).length;
+
+  const MIN_WRITTEN_REQUIRED = 5;
+
+  const isWrittenAttempted = writtenAttemptCount >= MIN_WRITTEN_REQUIRED;
+
+  const canSubmitTechnical = isMcqAttempted && isWrittenAttempted;
   return (
     <div className="min-h-screen bg-gray-50 p-6 max-w-6xl mx-auto select-none">
       <div className="flex justify-between mb-4">
@@ -318,7 +343,11 @@ router.push(`/interview/${safeSlug}/thank-you`);
           ⚠️ Tab switching detected. Multiple violations will end the interview.
         </div>
       )}
-
+      {/* {activeTab === "technical" && !canSubmitTechnical && (
+  <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded text-sm">
+    ⚠️ Please complete both MCQ and Written sections before submitting.
+  </div>
+)} */}
       {/* ===== APTITUDE ===== */}
       {activeTab === "aptitude" && (
         <>
@@ -351,17 +380,15 @@ router.push(`/interview/${safeSlug}/thank-you`);
           <div className="flex gap-3 mb-4">
             <button
               onClick={() => setTechTab("mcq")}
-              className={`px-4 py-2 rounded ${
-                techTab === "mcq" ? "bg-indigo-600 text-white" : "bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded ${techTab === "mcq" ? "bg-indigo-600 text-white" : "bg-gray-200"
+                }`}
             >
               MCQ
             </button>
             <button
               onClick={() => setTechTab("written")}
-              className={`px-4 py-2 rounded ${
-                techTab === "written" ? "bg-indigo-600 text-white" : "bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded ${techTab === "written" ? "bg-indigo-600 text-white" : "bg-gray-200"
+                }`}
             >
               Written
             </button>
@@ -407,9 +434,17 @@ router.push(`/interview/${safeSlug}/thank-you`);
               </div>
             ))}
 
-          <button onClick={submitTechnical} className={primaryBtn}>
-            Finish Technical
-          </button>
+          <button
+  onClick={submitTechnical}
+  disabled={!canSubmitTechnical || submitting}
+  className={`${primaryBtn} ${
+    !canSubmitTechnical || submitting
+      ? "opacity-50 cursor-not-allowed"
+      : ""
+  }`}
+>
+  {submitting ? "Submitting..." : "Finish Technical"}
+</button>
         </>
       )}
     </div>
