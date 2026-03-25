@@ -27,6 +27,7 @@ export default async function handler(req, res) {
         const attemptCount = await InterviewSession.countDocuments({
             "candidate.email": email,
             jobInfo: job._id,
+               reportGenerated: true,
         });
 
         const MAX_ATTEMPTS = 1;
