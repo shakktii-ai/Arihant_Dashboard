@@ -47,10 +47,11 @@ export default async function handler(req, res) {
       throw new Error("Company onboarding data not found");
     }
 
-    /* 2️⃣ CHECK ATTEMPT LIMIT (5 attempts per email per job) */
+    /* 2️⃣ CHECK ATTEMPT LIMIT (1 attempts per email per job) */
     const existingAttempts = await InterviewSession.countDocuments({
       "candidate.email": candidate.email,
       jobInfo: job._id,
+      reportGenerated: true, // Only count completed attempts
     });
 
     const MAX_ATTEMPTS = 1;
