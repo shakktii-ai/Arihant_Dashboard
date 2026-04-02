@@ -6,6 +6,7 @@ import { HiOutlineUserCircle } from "react-icons/hi";
 import { CiLogout } from "react-icons/ci";
 import { IoCreateOutline } from "react-icons/io5";
 import jsPDF from "jspdf";
+import { toast } from "react-toastify";
 export default function AdminIndex() {
   const router = useRouter();
 
@@ -79,7 +80,7 @@ export default function AdminIndex() {
     try {
       const isLoaded = await loadRazorpay();
       if (!isLoaded) {
-        alert("Razorpay SDK failed to load. Check your connection.");
+        toast.warning("Razorpay SDK failed to load. Check your connection.");
         setPaymentLoading(false);
         return;
       }
@@ -288,7 +289,7 @@ export default function AdminIndex() {
         loadInterviews();
         loadCompanyInfo(); // Refresh credits
         setShowCreate(false);
-        alert("Job created successfully");
+        toast.success("Job created successfully");
       } else {
         alert(data.error || "Error creating interview");
       }
@@ -723,7 +724,7 @@ export default function AdminIndex() {
         setSelectedInterviewReport(data.report);
         setShowInterviewReportModal(true);
       } else {
-        alert("Interview report not found");
+        toast.warning("Interview not attended.");
       }
     } catch (err) {
       console.error(err);
@@ -1424,7 +1425,7 @@ export default function AdminIndex() {
                 </div>
 
                 {/* Recommendation Badge */}
-                <div>
+                {/* <div>
                   <span
                     className={`px-4 py-2 rounded-full text-sm font-semibold
               ${selectedReport.reportAnalysis?.recommendation === "Proceed"
@@ -1436,7 +1437,7 @@ export default function AdminIndex() {
                   >
                     {selectedReport.reportAnalysis?.recommendation}
                   </span>
-                </div>
+                </div> */}
               </div>
 
               {/* ================= HIRING VERDICT ================= */}
@@ -1566,7 +1567,7 @@ export default function AdminIndex() {
                   </button>
 
                   {/* Shortlist Toggle */}
-                  <button
+                  {/* <button
                     onClick={async () => {
                       const newStatus = !selectedReport.shortlisted;
 
@@ -1591,7 +1592,7 @@ export default function AdminIndex() {
                     {selectedReport.shortlisted
                       ? "Remove from Shortlist"
                       : "Shortlist Candidate"}
-                  </button>
+                  </button> */}
 
                 </div>
 
