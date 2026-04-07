@@ -140,6 +140,7 @@
 // }
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 export default function Signup() {
   const router = useRouter();
@@ -225,13 +226,13 @@ export default function Signup() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Signup successful!");
+        toast.success("Signup successful!");
         router.push("/admin/login");
       } else {
-        alert(data.error || "Signup failed");
+        toast.error(data.error || "Signup failed");
       }
     } catch (err) {
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
+import {toast} from "react-toastify";
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const router = useRouter();
@@ -30,10 +30,10 @@ export default function Login() {
           router.push("/admin");
         }
       } else {
-        alert(data.error || "Login failed");
+        toast.error(data.error || "Login failed");
       }
     } catch (err) {
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
