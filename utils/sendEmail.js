@@ -8,8 +8,10 @@ const sendEmail = async (recipientEmail, subject, htmlContent) => {
     port: 587,
     secure: false, // TLS/SSL will be used instead
     auth: {
-      user: process.env.Brevo_user, // Your SMTP login
-      pass: process.env.Brevo_pass,         // Your SMTP password (Master Password)
+      // user: "a72d36001@smtp-brevo.com", // Your SMTP login
+      // pass: "xsmtpsib-d08e1f8956ff9d2d737b7f85a3a506b53525735e7325d9d417aa857326e341c2-NWiga4t1PkRLDvga",         // Your SMTP password (Master Password)
+       user: process.env.BREVO_USER, // Use environment variable for SMTP login
+      pass: process.env.BREVO_PASS, // Use environment variable for SMTP password
     },
   });
 
