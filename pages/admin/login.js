@@ -70,6 +70,7 @@ export default function Login() {
         >
           {loading ? "Login..." : "Login"}
         </button>
+         <Link href="/admin/forgot-password" className="text-black text-sm mt-4 block flex justify-center hover:underline hover:text-blue-600">Forgot Password?</Link>
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">

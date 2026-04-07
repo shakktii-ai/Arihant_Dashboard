@@ -115,6 +115,12 @@ export default function superAdminDashboard() {
         </h1>
 
         <div className="flex gap-3">
+           <button
+            onClick={() => router.push("/superadmin/reports")}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition"
+          >
+            Reports
+          </button>
           <button
             onClick={() => router.push("/superadmin/invoices")}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition"

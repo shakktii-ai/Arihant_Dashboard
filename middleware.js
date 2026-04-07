@@ -5,7 +5,7 @@ export function middleware(req) {
   const path = req.nextUrl.pathname;
 
   // Do NOT protect login page
-  if (path === "/admin/login" || path === "/admin/signup") {
+  if (path === "/admin/login" || path === "/admin/signup" || path === "/admin/forgot-password") {
     return NextResponse.next();
   }
 
